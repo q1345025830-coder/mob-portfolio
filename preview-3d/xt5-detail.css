@@ -332,27 +332,28 @@ html:has(.viewer[open]) { overflow: hidden; }
 @media (max-width: 680px) {
   .case-header { min-height: calc(49px + env(safe-area-inset-top)); }
   .mark { font-size: 21px; }
-  .case-header a { font-size: 12px; }
-  .hero-title { padding-block: clamp(82px, 30.25vw, 124px) 54px; }
-  h1 { font-size: clamp(44px, 13.2vw, 69px); }
-  .hero-meta { padding-block: 9px 10px; }
+  .case-header a { font-size: 13px; }
+  .hero-title { padding-block: 34px 24px; text-align: start; }
+  h1 { font-size: clamp(43px, 12.5vw, 68px); line-height: 1.04; }
+  .title-name { margin-top: .08em; }
+  .hero-meta { padding-block: 10px 0; margin-bottom: 16px; }
   .hero-meta dd { font-size: 12px; }
   .hero-figure .media-link { aspect-ratio: 16 / 9; }
-  .lead-section { padding-block: 75px 62px; }
-  .case-lead { font-size: clamp(30px, 8.5vw, 48px); }
-  .story-heading, .pair, .site-views, .screen-views, .overview-copy { grid-template-columns: 1fr; }
-  .story-heading { gap: 12px; }
-  .pair, .site-views, .screen-views { row-gap: 25px; }
+  .lead-section { padding-block: 40px 31px; }
+  .case-lead { font-size: clamp(24px, 6.8vw, 36px); line-height: 1.36; letter-spacing: -.035em; }
+  .story, .gallery { margin-top: 45px; }
+  .story-heading, .pair, .site-views, .screen-views, .overview-copy { grid-template-columns: minmax(0, 1fr); }
+  .story-heading { gap: 10px; }
+  .overview-copy p, .story-heading p { font-size: 15px; }
+  .pair, .site-views, .screen-views { row-gap: 28px; }
   .screen-views > :first-child, .screen-views > :last-child { grid-column: 1; }
+  .case-figure figcaption { line-height: 1.5; }
+  .case-figure figcaption p { font-size: 14px; line-height: 1.7; }
   .gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .gallery-label { gap: 6px; font-size: 12px; }
   .related-grid { grid-template-columns: 1fr; gap: 13px; }
   .related-link { grid-template-columns: 42% 1fr; align-items: center; font-size: 14px; }
   .related-link > span { border-top: 0; }
-}
-
-@media (max-width: 345px) {
-  .hero-title { padding-block: 66px 40px; }
 }
 
 @media (prefers-reduced-motion: no-preference) {

@@ -45,5 +45,22 @@ figcaption {
 .gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
 
 @media (max-width: 680px) {
-  .gallery { grid-template-columns: 1fr; gap: 14px; }
+  .site-bar { min-height: 49px; }
+  .site-bar a, .site-footer a { font-size: 13px; }
+  .mark { font-size: 21px; }
+  .case-heading { padding-block: 29px 18px; }
+  .case-heading h1 {
+    margin: 0 0 15px;
+    font-size: clamp(29px, 8.6vw, 50px);
+    line-height: 1.18;
+    text-wrap: pretty;
+  }
+  .facts { border-top: 1px solid var(--rule); padding-top: 9px; font-size: 12px; line-height: 1.5; }
+  .case-heading .summary { margin-top: 11px; }
+  figcaption { line-height: 1.5; }
+  figcaption span[aria-hidden] { color: var(--accent); }
+  .image-section { margin-top: 38px; }
+  .image-section h2 { margin-block: 16px; }
+  .gallery { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .site-footer { margin-top: 42px; }
 }
