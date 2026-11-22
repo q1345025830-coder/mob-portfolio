@@ -1,5 +1,5 @@
 [data-case-theme="aurora"] {
-  --case-tone: #0e242b;
+  --case-tone: #10262b;
   --case-accent: #9fd4cc;
   --case-rule: #3b565a;
   --case-panel: #173139;
@@ -13,7 +13,7 @@
 }
 
 [data-case-theme="canyon"] {
-  --case-tone: #251b16;
+  --case-tone: #291c17;
   --case-accent: #e7aa82;
   --case-rule: #614639;
   --case-panel: #372820;

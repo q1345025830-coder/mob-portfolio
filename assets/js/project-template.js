@@ -7,6 +7,8 @@ window.renderProject = ({project,t,esc,link,lang,image}) => {
   const stories = window.portfolioProjectStories?.[project.id];
   const locale = lang === 'en' ? 1 : 0;
   const imageIndex = id => project.images.findIndex(entry => entry.id === id);
+  const fullWidth = '(max-width: 760px) 100vw, 90vw';
+  const halfWidth = '(max-width: 760px) 100vw, 45vw';
   const figure = (i, cls='', showNote=true, sizes) => {
     const entry=project.images[i];
     const note = showNote && notes?.[entry.id]?.[locale];
@@ -20,23 +22,39 @@ window.renderProject = ({project,t,esc,link,lang,image}) => {
       </figcaption>
     </figure>`;
   };
-  const renderStory = ({layout, main, supporting, study, studyLabel, title, copy}) => {
-    const heading = esc(title[locale]).replaceAll('|', '<br>');
-    const studyMarkup = study ? `<figure class="story-study">
-      <img src="assets/images/studies/${esc(study)}.webp" alt="${esc(studyLabel[locale])}" loading="lazy" decoding="async">
-      <figcaption>${esc(studyLabel[locale])}</figcaption>
-    </figure>` : '';
-    return `<section class="editorial-story editorial-story--${esc(layout)}${study ? ' has-study' : ''}">
-      <div class="editorial-copy">
-        <h2>${heading}</h2>
-        <p>${esc(copy[locale])}</p>
+  const renderViews = indices => {
+    const paired = indices.length > 1;
+    return `<div class="editorial-views${paired ? ' editorial-views--paired' : ''}">
+      ${indices.map(i => figure(i, '', false, paired ? halfWidth : fullWidth)).join('')}
+    </div>`;
+  };
+  const renderStory = ({main, supporting, study, studyLabel, title, copy}) => {
+    const heading = `<h2>${esc(title[locale].replaceAll('|', ' '))}</h2>`;
+    const description = `<p class="editorial-description">${esc(copy[locale])}</p>`;
+    const indices = supporting.map(imageIndex);
+    if (!study) {
+      return `<section class="editorial-story">
+        <div class="editorial-heading">${heading}${description}</div>
+        ${renderViews([imageIndex(main), ...indices])}
+      </section>`;
+    }
+    return `<section class="editorial-story">
+      <div class="editorial-spread">
+        ${heading}
+        ${figure(imageIndex(main), 'editorial-primary', false, '(max-width: 760px) 100vw, 63vw')}
+        <div class="editorial-aside">
+          <figure class="story-study">
+            <img src="assets/images/studies/${esc(study)}.webp" alt="${esc(studyLabel[locale])}" loading="lazy" decoding="async">
+            <figcaption>${esc(studyLabel[locale])}</figcaption>
+          </figure>
+          ${description}
+        </div>
       </div>
-      ${figure(imageIndex(main),'editorial-primary',false,'(max-width: 760px) 100vw, 65vw')}${studyMarkup ? '\n      ' + studyMarkup : ''}${supporting.length ? `
-      <div class="editorial-support">
-        ${supporting.map(id => figure(imageIndex(id),'',false,'(max-width: 760px) 82vw, 35vw')).join('')}
-      </div>` : ''}
+      ${indices.length ? renderViews(indices) : ''}
     </section>`;
   };
+  const featuredImages = new Set([0, ...(stories ?? []).flatMap(story => [story.main, ...story.supporting]).map(imageIndex)]);
+  const remainingImages = project.images.map((_, i) => i).filter(i => !featuredImages.has(i));
   const chapter = (num,zh,en,sub) => `<div class="chapter-copy" data-reveal><span class="chapter-number">${num} /</span><h2>${t(zh,en)}</h2><span class="chapter-label">${sub}</span></div>`;
   return `
     <header class="detail-head case-head ${project.heading.layout==='stacked'?'case-head--stacked':''}">
@@ -55,8 +73,12 @@ window.renderProject = ({project,t,esc,link,lang,image}) => {
           return figure(block.index,({'edge':'edge-figure','inset':'structure-figure','finale':'finale-figure','portrait':'portrait-figure'})[block.layout]||'');
         }).join('')}
       </section>`).join('')}
+      ${stories && remainingImages.length ? `<section class="editorial-story editorial-more">
+        <div class="editorial-heading"><h2>${t('项目影像','Project images')}</h2></div>
+        ${renderViews(remainingImages)}
+      </section>` : ''}
     </div>
-    ${isShort ? '' : `<section class="case-archive" aria-labelledby="archive-title">
+    ${isShort || stories ? '' : `<section class="case-archive" aria-labelledby="archive-title">
       <div class="archive-heading" data-reveal><div><span class="eyebrow">IMAGE INDEX</span><h2 id="archive-title">${t('项目影像','Project images')}</h2></div><span>${project.images.length} ${project.imageLabel?esc(project.imageLabel[lang]):t('张渲染图','RENDERINGS')}</span></div>
       <div class="archive-grid">${project.images.map((entry,i)=>`<button class="archive-item zoom-trigger" data-index="${i}" aria-label="${esc(t('放大：','Enlarge: ')+entry.caption[lang])}"><span class="archive-image"><img src="${esc(entry.src.replace('-1600.jpg','-768.jpg'))}" width="${entry.width}" height="${entry.height}" alt="${esc(entry.alt[lang])}" loading="lazy" decoding="async"></span><span class="archive-caption"><span>${String(i+1).padStart(2,'0')}</span><span>${esc(entry.caption[lang])}</span><span aria-hidden="true">↗</span></span></button>`).join('')}</div>
     </section>`}

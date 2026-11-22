@@ -79,7 +79,7 @@ body[data-page="home"] {
   --accent: #dc897b;
   --gutter: clamp(24px, 5.56vw, 80px);
 }
-body[data-page="home"] .header { height: 75px; }
+body:is([data-page="home"], [data-page="project"]) .header { height: 75px; }
 body[data-page="home"] .wordmark,
 body[data-page="home"] .footer > span:first-child { display: inline-flex; align-items: center; gap: 11px; }
 body[data-page="home"] .wordmark::before,
@@ -134,7 +134,7 @@ html[lang="en"] .home-intro.hero h1 { font-size: clamp(32px, 3.5vw, 50px); lette
 }
 @media (max-width:760px) {
   body[data-page="home"] { --gutter: 24px; }
-  body[data-page="home"] .header { height: 65px; }
+  body:is([data-page="home"], [data-page="project"]) .header { height: 65px; }
   body[data-page="home"] .nav { top: 64px; }
   body[data-page="home"] .nav .lang { padding-left: 0; }
   body[data-page="home"] .nav .lang::before { display: none; }
@@ -158,7 +158,7 @@ body[data-page="home"] {
     radial-gradient(ellipse 46% 540px at 98% 620px, #39231f 0%, transparent 90%),
     #111214;
 }
-[data-page="home"] .header {
+:is([data-page="home"], [data-page="project"]) .header {
   height: 61px;
   margin-top: 22px;
   padding-inline: clamp(16px, 2vw, 28px);
@@ -188,8 +188,8 @@ body[data-page="home"] {
   backdrop-filter: blur(14px);
 }
 @media (max-width: 760px) {
-  [data-page="home"] .header { height: 58px; margin-top: 14px; }
-  [data-page="home"] .header .nav {
+  :is([data-page="home"], [data-page="project"]) .header { height: 58px; margin-top: 14px; }
+  :is([data-page="home"], [data-page="project"]) .header .nav {
     inset: calc(100% + 8px) 0 auto;
     border: 1px solid #ffffff30;
     border-radius: 14px;

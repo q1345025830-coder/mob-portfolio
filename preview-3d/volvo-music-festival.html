@@ -4,10 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex">
-  <meta name="theme-color" content="#0e242b">
+  <meta name="theme-color" content="#10262b">
   <meta name="description" content="极光屏把展车、天幕和乐器连成一片夜间展区。">
   <title>沃尔沃音乐节 · MOB</title>
   <link rel="icon" href="data:,">
+  <link rel="preload" as="image" imagesrcset="../assets/images/volvo-music-festival/01-768.jpg 768w, ../assets/images/volvo-music-festival/01-1600.jpg 1600w" imagesizes="(max-width: 680px) calc(100vw - 32px), 96vw" fetchpriority="high">
   <script src="../assets/js/navigation.js"></script>
   <script>
     if (!location.hash
@@ -17,13 +18,14 @@
       const grid = new URL('index.html', location.href);
       const fromGrid = history.length > 1 && from?.origin === grid.origin && from.pathname === grid.pathname;
       document.documentElement.dataset.caseSource = fromGrid ? 'grid' : 'direct';
-      document.documentElement.dataset.caseEnter = 'waiting';
+      document.documentElement.dataset.caseEnter = 'ready';
     }
   </script>
   <link rel="stylesheet" href="xt5-detail.css">
   <link rel="stylesheet" href="case-colors.css">
   <link rel="stylesheet" href="case-sample.css">
   <link rel="stylesheet" href="case-editorial.css">
+  <link rel="stylesheet" href="sample-entry.css">
   <script type="module" src="xt5-detail.js"></script>
 </head>
 <body class="case-sample case-editorial">
@@ -47,7 +49,7 @@
         </dl>
         <figure class="case-figure hero-figure" data-arrive="image">
           <a class="media-link" href="case-media/volvo/aurora.png" data-view-image="0" aria-label="查看大图：极光展区全景">
-            <img src="../assets/images/volvo-music-festival/01-1600.jpg" srcset="../assets/images/volvo-music-festival/01-768.jpg 768w, ../assets/images/volvo-music-festival/01-1600.jpg 1600w, ../assets/images/volvo-music-festival/01-2560.jpg 1672w" sizes="(max-width: 680px) calc(100vw - 32px), 96vw" width="1672" height="941" alt="极光展区全景。白色展车在中央，左侧是天幕和座席，右侧散布乐器。弧形极光屏把三组内容连进同一个视野。" fetchpriority="high" decoding="async">
+            <img src="../assets/images/volvo-music-festival/01-1600.jpg" srcset="../assets/images/volvo-music-festival/01-768.jpg 768w, ../assets/images/volvo-music-festival/01-1600.jpg 1600w" sizes="(max-width: 680px) calc(100vw - 32px), 96vw" width="1672" height="941" alt="极光展区全景。白色展车在中央，左侧是天幕和座席，右侧散布乐器。弧形极光屏把三组内容连进同一个视野。" fetchpriority="high" decoding="async">
             <span class="expand-mark" aria-hidden="true">↗</span>
           </a>
           <figcaption>
@@ -63,7 +65,7 @@
       <section class="story shell" aria-labelledby="camp">
         <header class="story-heading">
           <h2 id="camp">天幕下的座席</h2>
-          <p>极光屏铺开冷色背景，天幕和球灯用暖光把露营座席从展车旁带出来。</p>
+          <p>天幕贴着车侧展开，桌椅面向展区前沿。屏幕上的青绿色光带衬出车身，低处的球灯照亮座席边界。</p>
         </header>
         <div class="case-spread">
           <figure class="case-figure">
@@ -90,7 +92,7 @@
             </a>
             <figcaption>
               <div class="figure-key"><strong>后备箱与补给亭 · 夜景</strong><span class="figure-kind">方案渲染 · 光影精修</span></div>
-              <p>打开的后备箱面向草地座席，串灯连到一旁的补给亭。</p>
+              <p>草地方案把座席移到打开的车尾。野餐桌贴近后备箱，一串灯从桌旁连到补给亭。</p>
             </figcaption>
         </figure>
       </section>
