@@ -1,7 +1,7 @@
 import { installWheelScroll } from './xt5-scroll.js';
 
 const stateKey = 'mobXt5FromGrid';
-const gridUrl = new URL('index.html', location.href);
+const gridUrl = new URL('index.html', import.meta.url);
 const referrer = document.referrer ? new URL(document.referrer) : null;
 if (history.length > 1 && referrer?.origin === gridUrl.origin && referrer.pathname === gridUrl.pathname) {
   history.replaceState({ ...history.state, [stateKey]: true }, '');

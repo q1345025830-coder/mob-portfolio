@@ -651,23 +651,6 @@ window.portfolioProjects = [
         "layout": "wide"
       },
       {
-        "id": "overall-a",
-        "src": "assets/images/mobile-showroom/overall-a-1600.jpg",
-        "srcset": "assets/images/mobile-showroom/overall-a-768.jpg 768w, assets/images/mobile-showroom/overall-a-1600.jpg 1600w, assets/images/mobile-showroom/overall-a-2560.jpg 2560w",
-        "full": "assets/images/mobile-showroom/overall-a-2560.jpg",
-        "width": 3840,
-        "height": 2160,
-        "alt": {
-          "zh": "2026 凯迪拉克移动展厅三维渲染 — 整体空间 · 另一画面",
-          "en": "2026 Cadillac Mobile Showroom rendering — Overall space · alternate visual"
-        },
-        "caption": {
-          "zh": "整体空间 · 另一画面",
-          "en": "Overall space · alternate visual"
-        },
-        "layout": "wide"
-      },
-      {
         "id": "vehicle-blue-high",
         "src": "assets/images/mobile-showroom/vehicle-blue-high-1600.jpg",
         "srcset": "assets/images/mobile-showroom/vehicle-blue-high-768.jpg 768w, assets/images/mobile-showroom/vehicle-blue-high-1600.jpg 1600w, assets/images/mobile-showroom/vehicle-blue-high-2560.jpg 2560w",

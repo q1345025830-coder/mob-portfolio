@@ -390,10 +390,10 @@ html:has(.viewer[open]) { overflow: hidden; }
     transform: none;
     animation: none;
   }
-  @keyframes backdrop-timeout { to { background-color: #0c0c0c; } }
+  @keyframes backdrop-timeout { to { background-color: var(--case-tone, #0c0c0c); } }
   @keyframes backdrop-settle {
     from { background-color: var(--stage-transition); }
-    to { background-color: #0c0c0c; }
+    to { background-color: var(--case-tone, #0c0c0c); }
   }
   @keyframes entry-timeout { to { opacity: 1; transform: none; } }
   @keyframes case-arrive {

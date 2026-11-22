@@ -26,18 +26,23 @@ const verticalSegments = 16;
 export const clamp = (value, low, high) => Math.min(high, Math.max(low, value));
 export function clampView(layout, x, y) {
   const { left, right, top, bottom } = layout.pan;
-  return { x: clamp(x, left, right), y: clamp(y, top, bottom) };
+  const centerX = clamp(x, left, right);
+  const finalRow = layout.partialRow;
+  // Blend into the shallower edge once the view moves past the occupied columns.
+  const extra = finalRow ? finalRow.height * clamp(centerX - finalRow.right, 0, 1) : 0;
+  return { x: centerX, y: clamp(y, top, Math.max(top, bottom - extra)) };
 }
 
 export function layoutFor(width, height, projectIds) {
   const narrow = width <= 680;
-  const stepX = narrow ? Math.max(1, width * .81) : clamp(width * .248, 242, 555);
-  const stepY = narrow ? Math.max(height * .398, 205) : clamp(height * .365, 217, 410);
+  const stepX = narrow ? Math.max(1, width * .51) : clamp(width * .248, 242, 555);
+  const stepY = narrow ? Math.max(height * .365, 162) : clamp(height * .365, 217, 410);
   const columns = Math.min(gridColumns, projectIds.length);
   const rows = Math.ceil(projectIds.length / gridColumns);
+  const lastRowColumns = projectIds.length - (rows - 1) * gridColumns;
   const xLines = Array.from({ length: columns + 1 }, (_, i) => (i - .5) * stepX);
-  const yLines = Array.from({ length: rows + 1 }, (_, i) => (i <= 1 ? i - 1 : i - .75) * stepY);
-  const sizes = [.92, .95, .86, .93, .89];
+  const yLines = Array.from({ length: rows + 1 }, (_, i) => (narrow || i <= 1 ? i - 1 : i - .75) * stepY);
+  const sizes = narrow ? [.94, .96, .92, .95, .93] : [.92, .95, .86, .93, .89];
   const tiles = {};
   const centers = projectIds.map((id, index) => {
     const r = Math.floor(index / gridColumns), c = index % gridColumns;
@@ -51,7 +56,7 @@ export function layoutFor(width, height, projectIds) {
   const top = Math.min(...centers.map(center => center.y));
   const bottom = Math.max(...centers.map(center => center.y));
   // Keep the outer tiles in reach without panning half the viewport past the board.
-  const sideInset = narrow ? 0 : Math.min(width * .194 / stepX, (right - left) / 2);
+  const sideInset = Math.min(narrow ? .5 : width * .194 / stepX, (right - left) / 2);
   const halfHeight = (bottom - top) / 2;
   const pan = {
     left: left + sideInset,
@@ -59,19 +64,24 @@ export function layoutFor(width, height, projectIds) {
     top: top + Math.min(height * .125 / stepY, halfHeight),
     bottom: bottom - Math.min(height * .175 / stepY, halfHeight),
   };
+  const partialRow = rows > 1 && lastRowColumns < columns ? {
+    right: lastRowColumns - 1,
+    height: bottom - centers[(rows - 2) * gridColumns].y,
+  } : null;
   return {
-    width, height, narrow, tiles, xLines, yLines, stepX, stepY, pan,
+    width, height, narrow, tiles, xLines, yLines, stepX, stepY, pan, lastRowColumns, partialRow,
     homeX: narrow ? pan.left : (pan.left + pan.right) / 2,
+    homeY: narrow ? clamp(1, pan.top, pan.bottom) : 0,
   };
 }
 
 function tileContent(tile, aspect, narrow) {
   const { cell } = tile;
-  const insetX = narrow ? 11 : 15;
+  const insetX = narrow ? 7 : 15;
   const insetY = narrow ? 7 : 11;
-  const upperHeight = narrow ? 45 : 36;
-  const lowerHeight = narrow ? 26 : 29;
-  const gap = narrow ? 5 : 8;
+  const upperHeight = narrow ? 38 : 36;
+  const lowerHeight = narrow ? 22 : 29;
+  const gap = narrow ? 4 : 8;
   const bounds = {
     left: cell.left + insetX, right: cell.right - insetX,
     top: cell.top + insetY, bottom: cell.bottom - insetY,
@@ -84,7 +94,7 @@ function tileContent(tile, aspect, narrow) {
   const left = clamp(tile.x - width / 2, bounds.left, bounds.right - width);
   const top = clamp(tile.y - height / 2, artTop, artBottom - height);
   const art = { left, right: left + width, top, bottom: top + height };
-  const split = bounds.left + widthInside * (narrow ? .41 : .40);
+  const split = bounds.left + widthInside * .40;
   const upper = { top: bounds.top, bottom: bounds.top + upperHeight };
   const lower = { top: bounds.bottom - lowerHeight, bottom: bounds.bottom };
   const corners = [
@@ -102,21 +112,23 @@ export function viewForTile(layout, id) {
 }
 
 function project(x, y, layout, view) {
-  const zoom = 1 / (1 + view.pull * .145);
-  const dx = (x - view.x * layout.stepX + view.driftX) * zoom;
-  const dy = (y - view.y * layout.stepY + view.driftY) * zoom;
-  const u = (dx / (layout.width * .54)) ** 2;
-  const v = (dy / (layout.height * .68)) ** 2;
-  const scale = 1 / (1 + .168 * u / (1 + .63 * u) + .044 * v / (1 + .40 * v));
+  const { width, height, narrow, stepX, stepY } = layout;
+  const zoom = 1 / (1 + view.pull * (narrow ? .045 : .145));
+  const dx = (x - view.x * stepX + view.driftX) * zoom;
+  const dy = (y - view.y * stepY + view.driftY) * zoom;
+  const u = (dx / (width * .54)) ** 2;
+  const v = (dy / (height * .68)) ** 2;
+  const scale = 1 / (1 + (narrow ? .070 : .168) * u / (1 + .63 * u) + (narrow ? .020 : .044) * v / (1 + .40 * v));
   const horizontal = dx * scale;
-  const edge = Math.min(1.65, (2 * horizontal / layout.width) ** 2);
-  const bend = y / (1 + .32 * (y / layout.stepY) ** 2);
-  const bow = bend * zoom * edge * (layout.narrow ? .128 : .192);
+  const edge = Math.min(1.65, (2 * horizontal / width) ** 2);
+  const fromSeam = y - (narrow ? stepY : 0);
+  const bend = fromSeam / (1 + .32 * (fromSeam / stepY) ** 2);
+  const bow = bend * zoom * edge * (narrow ? .055 : .192);
   // Bend relative to the middle seam in the same plane as the tiles.
   // Moving the view can carry a seam past the center without reversing its bend.
   return {
-    x: layout.width * .5 + horizontal,
-    y: layout.height * .49 + dy + bow,
+    x: width * .5 + horizontal,
+    y: height * (narrow ? .5 : .49) + dy + bow,
     scale,
   };
 }
@@ -359,22 +371,24 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
   }
 
   function drawGuides(layout, view) {
-    const { xLines, yLines } = layout;
+    const { xLines, yLines, lastRowColumns } = layout;
     const color = [.65, .64, .62, .34];
-    for (const y of yLines) {
-      const points = xLines.slice(0, -1).flatMap((x, i) =>
+    for (const [row, y] of yLines.entries()) {
+      const end = row === yLines.length - 1 ? lastRowColumns : xLines.length - 1;
+      const points = xLines.slice(0, end).flatMap((x, i) =>
         horizontalEdge(x, xLines[i + 1], y, layout, view, horizontalSegments).slice(i === 0 ? 0 : 1));
       drawLine(points, layout, color);
     }
-    for (const x of xLines) {
-      const points = yLines.slice(0, -1).flatMap((y, i) =>
+    for (const [col, x] of xLines.entries()) {
+      const end = yLines.length - (col <= lastRowColumns ? 1 : 2);
+      const points = yLines.slice(0, end).flatMap((y, i) =>
         verticalEdge(x, y, yLines[i + 1], layout, view, verticalSegments).slice(i === 0 ? 0 : 1));
       drawLine(points, layout, color);
     }
   }
 
   function loadNearby(cards, layout, dpr, view) {
-    const atHome = view.x === layout.homeX && view.y === 0 && view.pull < .02;
+    const atHome = view.x === layout.homeX && view.y === layout.homeY && view.pull < .02;
     const reach = atHome ? 0 : Math.min(124, layout.stepX * .30);
     const queue = cards.filter(entry => !entry.card.requested && entry.distance <= reach)
       .sort((a, b) => a.distance - b.distance || b.area - a.area);

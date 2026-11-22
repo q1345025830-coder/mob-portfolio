@@ -53,6 +53,7 @@ for (const link of links) {
   row.className = 'project-row';
   row.href = link.href;
   row.dataset.project = id;
+  if (link.dataset.caseTheme) row.dataset.caseTheme = link.dataset.caseTheme;
   row.append(label('row-name', title), label('row-brand', brand), label('row-kind', kind), label('row-year', year), projectArrow());
   const item = document.createElement('li');
   item.append(row);
@@ -115,7 +116,15 @@ function plainClick(event) {
 }
 list.addEventListener('click', event => {
   const link = event.target.closest('a[data-project]');
-  if (link && plainClick(event)) saveEntry(link.dataset.project);
+  if (!link || !plainClick(event)) return;
+  if (leaving) {
+    event.preventDefault();
+    return;
+  }
+  saveEntry(link.dataset.project);
+  if (!link.dataset.caseTheme || reduced.matches) return;
+  event.preventDefault();
+  exitToProject(link);
 });
 
 function stopGlide() {
@@ -191,9 +200,10 @@ function redraw() {
 function refreshLayout() {
   if (!gridVisible() || !stage.clientWidth || !stage.clientHeight) return;
   if (layout.width !== stage.clientWidth || layout.height !== stage.clientHeight) {
+    const wasHome = view.x === layout.homeX && view.y === layout.homeY;
     layout = layoutFor(stage.clientWidth, stage.clientHeight, projectIds);
     if (press) endPress(null, false);
-    Object.assign(view, clampView(layout, view.x, view.y));
+    Object.assign(view, wasHome ? { x: layout.homeX, y: layout.homeY } : clampView(layout, view.x, view.y));
   }
   redraw();
 }
@@ -219,16 +229,18 @@ function clearReturned() {
   returned = null;
 }
 
-function restoreEntry() {
+function restoreEntry(resetOnReload = false) {
   clearTimeout(exitTimer);
   leaving = null;
+  delete document.body.dataset.caseTheme;
   stage.classList.remove('is-leaving', 'is-case-leaving', 'is-dragging');
   clearReturned();
   stopGlide();
   press = mouse = null;
   suppressClick = false;
   view.pull = view.driftX = view.driftY = 0;
-  const state = history.state?.[stateKey];
+  const resetGrid = resetOnReload && !location.hash;
+  const state = resetGrid ? null : history.state?.[stateKey];
   section = location.hash === '#resume' ? 'resume' : 'work';
   workView = state?.workView === 'list' ? 'list' : 'grid';
   for (const mode of Object.keys(scrollOffsets)) {
@@ -237,7 +249,7 @@ function restoreEntry() {
   }
   updatePanels();
   const x = Number.isFinite(state?.x) ? state.x : layout.homeX;
-  const y = Number.isFinite(state?.y) ? state.y : 0;
+  const y = Number.isFinite(state?.y) ? state.y : layout.homeY;
   const gridLink = links.find(link => link.dataset.project === state?.projectId);
   const mode = visibleMode();
   returned = (mode === 'resume' ? null
@@ -247,6 +259,7 @@ function restoreEntry() {
     : gridVisible() ? clampView(layout, x, y) : { x, y };
   Object.assign(view, position);
   scroller.scrollTop = scrollOffsets[mode];
+  if (resetGrid) saveEntry(null);
   if (returned) {
     restoring = true;
     returned.classList.add('is-returned');
@@ -325,7 +338,24 @@ function endPress(event, release) {
   redraw();
 }
 
-window.addEventListener('pointerup', event => endPress(event, true));
+window.addEventListener('pointerup', event => {
+  const tap = event.pointerType === 'touch' && press?.id === event.pointerId
+    && !press.dragging && !suppressClick && !leaving && performance.now() - press.start.time < 500;
+  const link = tap ? linkAt(event.clientX, event.clientY) : null;
+  const startedOnLink = link && linkAt(press.start.x, press.start.y) === link;
+  endPress(event, true);
+  if (!startedOnLink) return;
+
+  // The browser may withhold a compatibility click after a touch drag.
+  // Open only when this new press starts and ends on the same projected card.
+  saveEntry(link.dataset.project);
+  if (reduced.matches) {
+    leaving = link;
+    location.assign(link.href);
+  } else {
+    exitToProject(link);
+  }
+});
 window.addEventListener('pointercancel', event => endPress(event, false));
 stage.addEventListener('lostpointercapture', event => {
   if (event.target === stage) endPress(event, false);
@@ -369,14 +399,22 @@ stage.addEventListener('click', event => {
   saveEntry(link.dataset.project);
   if (!ready || reduced.matches) return;
   event.preventDefault();
+  exitToProject(link);
+});
+
+function exitToProject(link) {
   leaving = link;
   stopGlide();
-  stage.classList.add('is-leaving');
-  const entersXt5 = link.dataset.project === 'xt5';
-  stage.classList.toggle('is-case-leaving', entersXt5);
-  redraw();
-  exitTimer = setTimeout(() => location.assign(link.href), entersXt5 ? 190 : 175);
-});
+  const { caseTheme } = link.dataset;
+  const entersCase = Boolean(caseTheme) || link.hasAttribute('data-case-transition');
+  if (caseTheme) document.body.dataset.caseTheme = caseTheme;
+  if (gridVisible()) {
+    stage.classList.add('is-leaving');
+    stage.classList.toggle('is-case-leaving', entersCase);
+    redraw();
+  }
+  exitTimer = setTimeout(() => location.assign(link.href), entersCase ? 190 : 175);
+}
 
 reset.addEventListener('click', () => {
   if (leaving) return;
@@ -384,7 +422,8 @@ reset.addEventListener('click', () => {
   clearReturned();
   stopGlide();
   view.x = layout.homeX;
-  view.y = view.pull = view.driftX = view.driftY = 0;
+  view.y = layout.homeY;
+  view.pull = view.driftX = view.driftY = 0;
   redraw();
 });
 reduced.addEventListener('change', () => {
@@ -409,5 +448,5 @@ function startGrid() {
     fallback();
   }
 }
-restoreEntry();
+restoreEntry(performance.getEntriesByType('navigation')[0]?.type === 'reload');
 new ResizeObserver(refreshLayout).observe(stage);

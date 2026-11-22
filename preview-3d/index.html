@@ -9,6 +9,7 @@
   <link rel="icon" href="data:,">
   <script src="../assets/js/navigation.js"></script>
   <link rel="stylesheet" href="preview.css">
+  <link rel="stylesheet" href="case-colors.css">
   <script type="module" src="app.js"></script>
 </head>
 <body>
@@ -43,7 +44,7 @@
     <section class="stage" aria-label="项目作品" aria-describedby="stage-help">
       <p class="visually-hidden" id="stage-help">可用 Tab 选择作品、回车打开案例。空间模式下可用方向键移动视角。</p>
       <div class="projects">
-        <a class="project" href="xt5-hummingbird.html" data-project="xt5" aria-labelledby="name-xt5">
+        <a class="project" href="xt5-hummingbird.html" data-project="xt5" data-case-transition aria-labelledby="name-xt5">
           <span class="project-meta brand"><span>CADILLAC</span></span>
           <span class="project-meta name" id="name-xt5"><span>XT5 蜂鸟部落</span></span>
           <span class="artwork"><img data-src="../assets/images/xt5/stage-1600.jpg"
@@ -52,7 +53,7 @@
           <span class="project-meta kind"><span>品牌活动</span></span>
           <span class="project-meta year"><span>2024</span></span>
         </a>
-        <a class="project" href="local-cases/chengdu-motor-show.html" data-project="chengdu-motor-show" aria-labelledby="name-chengdu-motor-show">
+        <a class="project" href="local-cases/chengdu-motor-show.html" data-project="chengdu-motor-show" data-case-theme="show-stage" aria-labelledby="name-chengdu-motor-show">
           <span class="project-meta brand"><span>CADILLAC</span></span>
           <span class="project-meta name" id="name-chengdu-motor-show"><span>成都车展 · 发布会与科技专场</span></span>
           <span class="artwork"><img data-src="local-cases/assets/chengdu-motor-show/01-1280.webp"
@@ -124,7 +125,7 @@
           <span class="project-meta kind"><span>试驾活动</span></span>
           <span class="project-meta year"></span>
         </a>
-        <a class="project" href="../review/index.html#case/retail" data-project="retail" aria-labelledby="name-retail">
+        <a class="project" href="cadillac-xt5-retail.html" data-project="retail" data-case-theme="brick" aria-labelledby="name-retail">
           <span class="project-meta brand"><span>CADILLAC</span></span>
           <span class="project-meta name" id="name-retail"><span>凯迪拉克 3 区 XT5 外展</span></span>
           <span class="artwork"><img data-src="../review/media/retail-1-960.webp"
@@ -133,7 +134,7 @@
           <span class="project-meta kind"><span>创意外展</span></span>
           <span class="project-meta year"><span>2026</span></span>
         </a>
-        <a class="project" href="../xt5-creative-exhibition.html" data-project="xt5-creative-exhibition" aria-labelledby="name-xt5-creative-exhibition">
+        <a class="project" href="xt5-creative-exhibition.html" data-project="xt5-creative-exhibition" data-case-theme="canyon" aria-labelledby="name-xt5-creative-exhibition">
           <span class="project-meta brand"><span>CADILLAC</span></span>
           <span class="project-meta name" id="name-xt5-creative-exhibition"><span>XT5 创意外展</span></span>
           <span class="artwork"><img data-src="../assets/images/xt5-outreach/cover-1600.jpg"
@@ -205,7 +206,7 @@
           <span class="project-meta kind"><span>汽车活动</span></span>
           <span class="project-meta year"></span>
         </a>
-        <a class="project" href="../volvo-music-festival.html" data-project="volvo-music-festival" aria-labelledby="name-volvo-music-festival">
+        <a class="project" href="volvo-music-festival.html" data-project="volvo-music-festival" data-case-theme="aurora" aria-labelledby="name-volvo-music-festival">
           <span class="project-meta brand"><span>VOLVO</span></span>
           <span class="project-meta name" id="name-volvo-music-festival"><span>沃尔沃音乐节</span></span>
           <span class="artwork"><img data-src="../assets/images/volvo-music-festival/01-1600.jpg"
@@ -222,6 +223,24 @@
             width="1671" height="941" alt="" decoding="async" draggable="false"></span>
           <span class="project-meta kind"><span>创意外展</span></span>
           <span class="project-meta year"><span>2025</span></span>
+        </a>
+        <a class="project" href="local-cases/cadillac-outdoor-exhibition.html" data-project="cadillac-outdoor-exhibition" data-case-theme="outdoor" aria-labelledby="name-cadillac-outdoor-exhibition">
+          <span class="project-meta brand"><span>CADILLAC</span></span>
+          <span class="project-meta name" id="name-cadillac-outdoor-exhibition"><span>凯迪拉克 1 区户外展</span></span>
+          <span class="artwork"><img data-src="local-cases/assets/cadillac-outdoor-exhibition/01-1280.webp"
+            data-srcset="local-cases/assets/cadillac-outdoor-exhibition/01-480.webp 480w, local-cases/assets/cadillac-outdoor-exhibition/01-1280.webp 1280w"
+            width="1672" height="941" alt="" decoding="async" draggable="false"></span>
+          <span class="project-meta kind"><span>户外展陈</span></span>
+          <span class="project-meta year"><span>2026</span></span>
+        </a>
+        <a class="project" href="local-cases/xt5-phev-chongqing.html" data-project="xt5-phev-chongqing" data-case-theme="phev-drive" aria-labelledby="name-xt5-phev-chongqing">
+          <span class="project-meta brand"><span>CADILLAC</span></span>
+          <span class="project-meta name" id="name-xt5-phev-chongqing"><span>XT5 PHEV 重庆试驾</span></span>
+          <span class="artwork"><img data-src="local-cases/assets/xt5-phev-chongqing/01-1280.webp"
+            data-srcset="local-cases/assets/xt5-phev-chongqing/01-480.webp 480w, local-cases/assets/xt5-phev-chongqing/01-1280.webp 1280w"
+            width="3477" height="1938" alt="" decoding="async" draggable="false"></span>
+          <span class="project-meta kind"><span>试驾活动</span></span>
+          <span class="project-meta year"><span>2026</span></span>
         </a>
       </div>
     </section>
