@@ -65,6 +65,9 @@ window.mobResearch = {
     },
     "xt5-phev-chongqing": {
       "tone": "#292520"
+    },
+    "cadillac-fengfan-outdoor": {
+      "tone": "#262422"
     }
   },
   "routes": {
@@ -85,6 +88,7 @@ window.mobResearch = {
     "volvo-music-festival.html": "volvo-music-festival",
     "cadillac-changsha.html": "cadillac-changsha",
     "cadillac-outdoor-exhibition.html": "cadillac-outdoor-exhibition",
-    "xt5-phev-chongqing.html": "xt5-phev-chongqing"
+    "xt5-phev-chongqing.html": "xt5-phev-chongqing",
+    "cadillac-fengfan-outdoor.html": "cadillac-fengfan-outdoor"
   }
 };
