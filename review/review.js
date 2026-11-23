@@ -9,6 +9,52 @@
       .filter(section => section.main.length || section.supporting.length);
     if (item.archive) item.archive = item.archive.filter(keep);
   }
+  const shortChapters = {
+    phev: [
+      { media: ['phev-2','phev-3'], title: ['青色灯带勾出展架','Cyan light traces the display'],
+        copy: ['正面灯带从暗色立柱两端露出，侧看则呈现它的进深。车顶和灯组同时带出反光，让展车轮廓从深色背景里浮出来。','From the front, cyan strips emerge at either side of the dark frame. The side view reveals their depth and where light catches the roof and headlamps.'] },
+      { media: ['phev-4'], title: ['车型字放在车头附近','Model lettering near the car'],
+        copy: ['把车型字放到车头前的地面，能与车辆同框。深色地台只留下青色边缘和亮字，视线仍集中在车身。','The model lettering sits on the floor in front of the car. Cyan edges and bright type remain visible against the dark base.'] }
+    ],
+    'new-year': [
+      { media: ['new-year-2'], title: ['顶圈、中柱与马形挂件','Ring, column and hanging horses'],
+        copy: ['暗底近景里，红色顶圈先勾出圆形轮廓，白色螺旋沿中柱向下接到底座。错落的马形挂件把顶圈和底座之间留成可透看的空间。','Against the dark background, the red ring gives the carousel its outline. The white spiral leads down the column, and the staggered horses leave spaces to see through.'] },
+      { media: ['new-year-3'], title: ['把节庆图案缩到台面','Festive details at tabletop scale'],
+        copy: ['滚筒把红白图案收进一个可近看的小体量。放在浅色台面边缘后，道具不会遮住后方的展车侧面。','The drum brings the red-and-white pattern down to a close viewing scale. The light tabletop keeps the prop legible while leaving the side of the car visible.'] }
+    ],
+    anniversary: [
+      { media: ['anniversary-3'], title: ['用路肩色块框住车身','Curb markings frame the car'],
+        copy: ['顶视里，两列红白路肩顺车身拉开间距。换到正面，可以看到车辆、站立人物和台面边界的相对高度。','From above, two strips of red-and-white curbing frame the vehicle. The front view shows the relative height of the car, the standing figure and the platform edge.'] },
+      { media: ['anniversary-2','anniversary-4'], title: ['留出坐下看车的距离','Room to sit beside the car'],
+        copy: ['VISTIQ 和座席分别占据展台两侧。高视角能看出圆形休息面与车侧之间的空隙，低视角则让车型立体字回到前景。','The VISTIQ and seating occupy separate sides of the platform. The elevated view shows the gap between them, and the lower view brings the model lettering to the foreground.'] }
+    ],
+    yangshuo: [
+      { media: ['yangshuo-2'], title: ['从接待柜台走到户外','From the reception counter outdoors'],
+        copy: ['入口的白色主画面贴着接待位布置。到了户外，黄色竖向标记靠近车队停靠面，从较远的位置也能辨认。','A light backdrop marks the reception point indoors. Outside, tall yellow markers identify the vehicle area from further away.'] },
+      { media: ['yangshuo-4'], title: ['开盒后的物件排列','How the objects sit inside the box'],
+        copy: ['掀开黄色盒盖后，黑色内托把物品依形状分开。较长的白色物件放在一侧，开盒时先读到一整排而不是一层散物。','Beneath the yellow lid, the black insert separates objects by shape. The long white piece sits at one side so the contents read as an arrangement when opened.'] }
+    ],
+  };
+  for (const project of shorts) {
+    const readings = shortChapters[project.id];
+    if (!readings) continue;
+    const oldViews = project.sections.flatMap(section => [...section.main,...section.supporting]);
+    const byMedia = new Map(oldViews.map(figure => [figure.media,figure]));
+    const chapters = readings.map(({ media,title,copy }) => ({
+      title:{zh:title[0],en:title[1]},
+      copy:{zh:copy[0],en:copy[1]},
+      main:media.map(id => byMedia.get(id)).filter(Boolean),
+      supporting:[],
+    })).filter(chapter => chapter.main.length);
+    if (!chapters.length) continue;
+    const placed = new Set(chapters.flatMap(chapter => chapter.main));
+    const extras = oldViews.filter(figure => !placed.has(figure));
+    if (extras.length) chapters.at(-1).main.push(...extras);
+    project.galleryOrder = oldViews;
+    project.sections = chapters;
+  }
+
+
   const gridPath = new URL('../preview-3d/index.html', location.href);
   const referrer = document.referrer && new URL(document.referrer);
   if (referrer && referrer.origin === gridPath.origin && referrer.pathname === gridPath.pathname) {
@@ -487,7 +533,7 @@
   }
   function renderCase(p) {
     const chapters=p.sections;
-    gallery=[...new Set([p.cover,...chapters.flatMap(s=>[...s.main,...s.supporting]),...(p.archive||[])])];
+    gallery=[...new Set([p.cover,...(p.galleryOrder||[]),...chapters.flatMap(s=>[...s.main,...s.supporting]),...(p.archive||[])])];
     const collection=p.short?shorts:projects;
     const next=collection[(collection.indexOf(p)+1)%collection.length];
     const sectionHead=[p.brand,tr(p.category),p.year].filter(Boolean).join(' / ');
