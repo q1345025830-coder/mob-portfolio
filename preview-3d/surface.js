@@ -21,7 +21,7 @@ const fragmentSource = `
 
 const gridColumns = 5;
 const hoverTint = [.94, .94, .97];
-const hoverContrast = 1.5;
+const hoverContrast = 1.8;
 // Matches the background beneath the transparent WebGL scene in preview.css.
 const gridBackground = 10;
 
@@ -379,7 +379,7 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
       const shade = 13 + Math.min(36, luma * .22);
       for (let channel = 0; channel < 3; channel++) {
         const previous = clamp(shade + (field.data[i + channel] - luma) * .28, 8, 62);
-        // Compensate for the tint so the blended hover pixel is 1.5× farther from the resting color.
+        // Compensate for the tint so the blended hover pixel is 1.8× farther from the resting color.
         const base = gridBackground / hoverTint[channel];
         field.data[i + channel] = base + (previous - base) * hoverContrast;
       }
