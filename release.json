@@ -1,9 +1,10 @@
 {
-  "version": "2026-11-23.7",
-  "productionBaseline": "3b26ce787c993273ea4bb902571577306cc1a32a",
+  "version": "2026-11-23.8",
+  "productionBaseline": "8bade1c7af666b235e5c9b400023268664ee8a91",
   "projects": 23,
   "originals": 195,
   "references": 25,
   "hoverContrast": 1.8,
-  "newProject": "preview-3d/local-cases/cadillac-fengfan-outdoor.html"
+  "mobileCoverWidth": 384,
+  "mobileHeroWidth": 896
 }

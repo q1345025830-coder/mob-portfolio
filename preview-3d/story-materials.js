@@ -23,6 +23,33 @@
     }, 340);
     image.decode().then(clear,clear);
   }
+  let activeHero, upcoming;
+  function prepareUpcoming(main, hero) {
+    if (activeHero === hero) return;
+    activeHero = hero;
+    upcoming?.disconnect();
+    if (!('IntersectionObserver' in window)) return;
+    const observe = () => {
+      if (activeHero !== hero || !main.isConnected) return;
+      upcoming = new IntersectionObserver((entries, observer) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const image = entry.target;
+          if (!image.complete) image.loading = 'eager';
+          observer.unobserve(image);
+        }
+      }, { rootMargin: '0px 0px 680px 0px' });
+      for (const image of main.querySelectorAll('img[loading="lazy"]')) {
+        if (image !== hero && !image.complete) upcoming.observe(image);
+      }
+    };
+    if (hero.complete) observe();
+    else {
+      hero.addEventListener('load', observe, { once:true });
+      hero.addEventListener('error', observe, { once:true });
+    }
+  }
+
   function enrich() {
     const id = projectId(), record = catalog.cases[id];
     root.classList.toggle('mob-themed', Boolean(record));
@@ -32,7 +59,10 @@
     const main = document.querySelector('main');
     if (!main) return;
     const image = main.querySelector('img');
-    if (image && !image.classList.contains('mob-loaded')) prepare(image);
+    if (image) {
+      if (!image.classList.contains('mob-loaded')) prepare(image);
+      prepareUpcoming(main, image);
+    }
 
   }
   function offerRetry(e) {

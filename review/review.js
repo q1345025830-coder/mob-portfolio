@@ -213,15 +213,20 @@
       (i.width?'width="'+i.width+'" height="'+i.height+'" ':'')+
       'alt="'+escape(tr(figure.alt||figure.caption))+'" '+(priority?'fetchpriority="high"':'loading="lazy"')+' decoding="async" '+extra+'>';
   }
-  function figureMarkup(figure,kind='primary',priority=false) {
+  const mobileCoverProjects=new Set(['phev','new-year','anniversary','yangshuo']);
+  function figureMarkup(figure,kind='primary',priority=false,mobileCover) {
     const hero=kind==='hero';
     const sizes=hero?'(max-width: 760px) 94vw, (max-width: 1500px) 94vw, 1400px':
       kind==='support'?'(max-width: 760px) 88vw, 30vw':
       kind==='comparison'?'(max-width: 760px) 94vw, 46vw':
       kind==='paired'?'(max-width: 760px) 94vw, 65vw':'(max-width: 760px) 94vw, 92vw';
     const index=imageIndex(figure);
+    const img=picture(figure,sizes,priority,hero?'data-case-cover':'fetchpriority="low"');
+    const media=mobileCover && mobileCoverProjects.has(mobileCover)
+      ? '<picture><source media="(max-width: 760px)" srcset="../preview-3d/fast/hero/'+mobileCover+'.webp">'+img+'</picture>'
+      : img;
     return '<figure class="case-figure '+kind+(figure.role==='reference'?' reference':'')+'"><button class="image-open" data-image="'+index+'" type="button" aria-label="'+escape(word('open')+' · '+tr(figure.caption))+'">'+
-      picture(figure,sizes,priority,hero?'data-case-cover':'')+'<span class="enlarge" aria-hidden="true">+</span></button><figcaption>'+escape(tr(figure.caption))+'</figcaption></figure>';
+      media+'<span class="enlarge" aria-hidden="true">+</span></button><figcaption>'+escape(tr(figure.caption))+'</figcaption></figure>';
   }
   function applyCopy() {
     document.documentElement.lang=lang==='zh'?'zh-CN':'en';
@@ -635,7 +640,7 @@
     const caseAction='<div class="case-jumps"><button class="glass" data-jump="design-heading" type="button">'+word('design')+'</button>'+
       (p.short?'':'<button class="glass" data-jump="gallery-heading" type="button">'+word('images')+'</button>')+'</div>';
     main.innerHTML='<article class="case-page" style="--tone:'+p.tone+'"><div class="case-tools frame"><a class="glass back" href="#work"><span aria-hidden="true">‹</span> '+word('back')+'</a>'+
-      (p.video?'<button class="glass" data-jump="case-film" type="button">▶ '+word('video')+'</button>':'')+caseAction+'</div><section class="case-screen" aria-label="'+escape(tr(p.title))+'">'+figureMarkup(p.cover,'hero',true)+
+      (p.video?'<button class="glass" data-jump="case-film" type="button">▶ '+word('video')+'</button>':'')+caseAction+'</div><section class="case-screen" aria-label="'+escape(tr(p.title))+'">'+figureMarkup(p.cover,'hero',true,p.id)+
       '<div class="screen-bar frame"><span class="screen-meta">'+escape(sectionHead)+'</span><button class="screen-read" data-jump="case-intro" type="button">'+word('read')+' <span aria-hidden="true">↓</span></button></div></section>'+
       '<div class="case-paper"><div class="case-reading"><header class="case-heading" id="case-intro" tabindex="-1"><div><p class="eyebrow">'+escape(sectionHead)+'</p><h1>'+escape(tr(p.title))+'</h1></div>'+
       (p.lead?'<p class="case-lead">'+escape(tr(p.lead))+'</p>':'')+'</header>'+
@@ -644,7 +649,7 @@
       chapters.map(renderChapter).join('')+'</div>'+
 
       (gallery.length<=1?'':'<section class="gallery" id="gallery"><header><h2 id="gallery-heading" tabindex="-1">'+word('gallery')+'</h2>'+(p.source?'<a href="'+p.source+'" target="_blank" rel="noopener">'+escape(tr(p.sourceLabel))+'</a>':'')+
-        '</header><div class="gallery-grid">'+gallery.map((img,i)=>'<button type="button" data-image="'+i+'" aria-label="'+escape(word('open')+' · '+tr(img.caption))+'">'+picture(img,'(max-width: 760px) 28vw, 14vw')+'</button>').join('')+
+        '</header><div class="gallery-grid">'+gallery.map((img,i)=>'<button type="button" data-image="'+i+'" aria-label="'+escape(word('open')+' · '+tr(img.caption))+'">'+picture(img,'(max-width: 760px) 28vw, 14vw',false,'fetchpriority="low"')+'</button>').join('')+
         '</div></section>')+'</div></div>'+
       '<footer class="case-footer"><div class="frame case-footer-inner"><a class="back" href="#work"><span aria-hidden="true">‹</span> '+word('back')+'</a>'+
       '<a href="'+coverLink(next)+'" class="related">'+picture(next.cover,'(max-width: 760px) 87vw, 55vw')+

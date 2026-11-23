@@ -324,7 +324,7 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
   for (const card of cards) {
     const pixels = Uint8Array.from(atob(card.picture.dataset.pixels), value => value.charCodeAt(0));
     card.texture = textureFor(gl);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 32, 20, 0, gl.RGB, gl.UNSIGNED_BYTE, pixels);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 16, 10, 0, gl.RGB, gl.UNSIGNED_BYTE, pixels);
   }
   const byId = new Map(cards.map(card => [card.id,card]));
   const copies = new Map();
@@ -351,23 +351,42 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
     copies.set(key,entry);
     return entry;
   }
-  let pending = 0;
+  let pending = 0, backgroundPending = 0;
 
   const finishRequest = card => {
-    if (card.pending) pending--;
-    card.pending = false;
+    if (card.pending) {
+      pending--;
+      if (card.pending === 'nearby') backgroundPending--;
+    }
+    card.pending = null;
   };
-  const upload = card => {
-    if (signal.aborted || gl.isContextLost()) return;
-    finishRequest(card);
-    card.texture ??= textureFor(gl);
+  function replaceTexture(card, image) {
+    if (signal.aborted || gl.isContextLost()) return false;
     try {
       gl.bindTexture(gl.TEXTURE_2D, card.texture);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, card.picture);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+      return true;
     } catch {
       onFallback();
-      return;
+      return false;
     }
+  }
+
+  function loadPreview(card) {
+    const source = card.picture.dataset.preview;
+    if (card.previewStarted || card.loaded || !source) return;
+    card.previewStarted = true;
+    const preview = new Image();
+    preview.dataset.coverProject = card.id;
+    preview.addEventListener('load', () => {
+      if (!card.loaded && replaceTexture(card, preview)) onRedraw();
+    }, { once: true, signal });
+    preview.src = source;
+  }
+
+  const upload = card => {
+    finishRequest(card);
+    if (!replaceTexture(card, card.picture)) return;
     const swatch = document.createElement('canvas');
     swatch.width = swatch.height = 3;
     const painter = swatch.getContext('2d');
@@ -403,7 +422,7 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
         card.retried = true;
         setTimeout(() => {
           if (signal.aborted) return;
-          const url = new URL(card.picture.dataset.src, document.baseURI);
+          const url = new URL(card.picture.currentSrc || card.source || card.picture.dataset.src, document.baseURI);
           url.searchParams.set('retry', '1');
           card.picture.removeAttribute('srcset');
           card.picture.src = url.href;
@@ -425,17 +444,31 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
     gl.drawArrays(gl.LINE_STRIP, 0, points.length);
   }
 
-  function loadNearby(cards, layout, dpr, view) {
-    
-    const reach = layout.stepX * .95;
-    const queue = cards.filter(entry => !entry.card.requested && entry.distance <= reach)
+  function loadNearby(cards, layout, dpr) {
+    const reach = layout.stepX * (layout.narrow ? .72 : .95);
+    const primaryArea = layout.stepX * layout.stepY * .14;
+    const queue = cards.filter(entry => entry.distance <= reach)
       .sort((a, b) => a.distance - b.distance || b.area - a.area);
-    for (const { card, art, distance } of queue.slice(0, Math.max(0, 6 - pending))) {
-      if (card.requested) continue;
+    for (const { card, art, distance, area } of queue) {
+      loadPreview(card);
+      const prominent = area >= primaryArea;
+      const mobile = layout.narrow && card.picture.dataset.mobile;
+      if (card.pending || card.requested === 'desktop' || (mobile && card.requested === 'mobile')) continue;
+      if (pending >= 6 || (!prominent && (pending >= 4 || backgroundPending >= 2))) continue;
+      card.requested = mobile ? 'mobile' : 'desktop';
+      card.pending = prominent ? 'visible' : 'nearby';
       pending++;
-      card.requested = card.pending = true;
-      const effectiveWidth = (art.right - art.left) * dpr / (devicePixelRatio || 1);
-      requestCover(card.picture, Math.ceil(effectiveWidth) + 'px', distance === 0 ? 'high' : 'low');
+      if (!prominent) backgroundPending++;
+      const priority = prominent ? 'high' : 'low';
+      if (mobile) {
+        card.source = mobile;
+        card.picture.loading = 'eager';
+        card.picture.fetchPriority = priority;
+        card.picture.src = mobile;
+      } else {
+        const width = (art.right - art.left) * dpr / (devicePixelRatio || 1);
+        requestCover(card.picture, Math.ceil(width) + 'px', priority);
+      }
     }
   }
 
@@ -463,7 +496,7 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
 
       return { tile, card, art, corners, center, area, visible, distance: viewportDistance(box, layout) };
     });
-    loadNearby(projected, layout, dpr, view);
+    loadNearby(projected, layout, dpr);
     const ordered = projected.filter(entry => entry.visible)
       .sort((a, b) => a.center.scale - b.center.scale);
     const primary = new Map();
@@ -557,3 +590,4 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
     },
   };
 }
+
