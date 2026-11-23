@@ -35,8 +35,8 @@ window.renderProject = ({project,t,esc,link,lang,image}) => {
     const comparison = reference ? `
       <div class="editorial-reference-pair">
         ${views}
-        <figure class="story-study case-sourced-reference">
-          <img src="${esc(reference.src)}" loading="lazy" decoding="async" alt="${esc(reference.title[locale])}">
+        <figure class="story-study case-sourced-reference${reference.width ? ' case-photo-reference' : ''}">
+          <img src="${esc(reference.src)}"${reference.width ? ' width="'+reference.width+'" height="'+reference.height+'"' : ''} loading="lazy" decoding="async" alt="${esc(reference.title[locale])}">
           <figcaption><strong>${esc(reference.title[locale])}</strong>
             <p>${esc(reference.copy[locale])}</p>
             <a href="${esc(reference.source)}">${esc(reference.author)}</a> ·

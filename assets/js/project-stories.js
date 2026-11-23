@@ -181,7 +181,27 @@ window.portfolioProjectStories = {
       "copy": [
         "远看，主屏和前排车阵形成连续的展示面。靠近后，红色入口从深色立面中跳出，引导视线落到斜放的车辆上。",
         "From a distance, the screen and front row of cars read as one display. Up close, the red entry stands out against the dark façade and directs attention to the angled car."
-      ]
+      ],
+      "reference": {
+        "src": "preview-3d/research/mobile-showroom-2026-pexels-9407240.webp",
+        "title": [
+          "光影参考 · 框内暖红光",
+          "Lighting reference · Red light inside a frame"
+        ],
+        "copy": [
+          "照片中暖红光与冷色门洞相接，交界由直角立面界定。入口成片也把红色展示面限定在凹入的车位里，用深色外框标出边界。",
+          "A square opening defines the boundary between saturated red light and a cooler passage. The showroom render similarly contains the red display in a recessed bay with a dark surround."
+        ],
+        "author": "Marina Leonova",
+        "source": "https://www.pexels.com/photo/red-light-in-the-room-9407240/",
+        "terms": "https://www.pexels.com/license/",
+        "license": [
+          "Pexels 许可",
+          "Pexels License"
+        ],
+        "width": 1050,
+        "height": 695
+      }
     },
     {
       "main": "lounge-wide",
@@ -284,7 +304,27 @@ window.portfolioProjectStories = {
       "copy": [
         "咖啡侧的吧台横向铺开，展车停在招牌与座席之间。户外侧把圆形灯面立在橙色车后，从双车正面能同时读出两套轮廓。",
         "The coffee counter stretches across its side, with the car between signage and seating. The outdoor side has a glowing circle behind the orange car. The two-car front view shows both outlines together."
-      ]
+      ],
+      "reference": {
+        "src": "preview-3d/research/cadillac-changsha-pexels-18441519.webp",
+        "title": [
+          "光影参考 · 暗场中的圆形发光面",
+          "Lighting reference · A circle of light in darkness"
+        ],
+        "copy": [
+          "照片让亮圆在暗场里成为可远看的标记。展陈成片把发光圆面放在车后，利用亮暗反差勾出前景车身。",
+          "A luminous circle reads as a landmark against the dark surroundings. In the render, a similar bright shape sits behind the car to define its silhouette."
+        ],
+        "author": "kari Kittlaus",
+        "source": "https://www.pexels.com/photo/luma-light-festival-in-queenstown-new-zealand-18441519/",
+        "terms": "https://www.pexels.com/license/",
+        "license": [
+          "Pexels 许可",
+          "Pexels License"
+        ],
+        "width": 1050,
+        "height": 700
+      }
     }
   ],
   "xt5-tibet": [
@@ -300,7 +340,27 @@ window.portfolioProjectStories = {
       "copy": [
         "山路展车画面把 XT5 放到真实尺度的地貌语境里，湖畔夜景则把同一段旅程落到可以停留的营地。",
         "The mountain-road scene places the XT5 against the scale of the landscape. The lakeside night view brings the journey to a camp where visitors can linger."
-      ]
+      ],
+      "reference": {
+        "src": "preview-3d/research/xt5-tibet-pexels-19039998.webp",
+        "title": [
+          "光影参考 · 暗山前的营地点光",
+          "Lighting reference · Low points of light by the shore"
+        ],
+        "copy": [
+          "山体在夜色里退成剪影，暖光集中在岸边低处。营地成片同样用低位亮点标出活动区域，保住后方的山湖轮廓。",
+          "The mountains recede into silhouette while warm light stays low by the shore. The camp render similarly marks the activity area without obscuring the mountain and lake profile."
+        ],
+        "author": "Lukas Seitz",
+        "source": "https://www.pexels.com/photo/tents-by-lake-at-night-19039998/",
+        "terms": "https://www.pexels.com/license/",
+        "license": [
+          "Pexels 许可",
+          "Pexels License"
+        ],
+        "width": 1050,
+        "height": 700
+      }
     },
     {
       "main": "11",
@@ -466,7 +526,27 @@ window.portfolioProjectStories = {
       "copy": [
         "入口先交代赛道场景，室内展陈再把视线收回到车辆和品牌画面，让试驾之外也有可以停下来看车的空间。",
         "The entrance establishes the track setting. Inside, the display brings the focus back to the vehicles and brand imagery, giving visitors a place to stop and look beyond the drive itself."
-      ]
+      ],
+      "reference": {
+        "src": "preview-3d/research/ct5-f1-track-drive-pexels-10911847.webp",
+        "title": [
+          "材质参考 · 金属面的平行压纹",
+          "Material reference · Parallel ribs in metal"
+        ],
+        "copy": [
+          "并列的金属筋条在侧光里形成细密明暗。P 房入口成片以可读的条纹把深色立面与红色接待面区分开。",
+          "Closely spaced ribs catch the light in parallel bands. A similarly legible surface rhythm sets the dark pit façade apart from the red reception accent."
+        ],
+        "author": "Jan van der Wolf",
+        "source": "https://www.pexels.com/photo/metal-garage-wall-10911847/",
+        "terms": "https://www.pexels.com/license/",
+        "license": [
+          "Pexels 许可",
+          "Pexels License"
+        ],
+        "width": 1050,
+        "height": 700
+      }
     },
     {
       "main": "10",
@@ -543,7 +623,27 @@ window.portfolioProjectStories = {
       "copy": [
         "近景把绿色展具和车身放进同一构图，可以看清色块、立体字与车辆之间的距离。",
         "Close views put the green display elements and vehicle in the same frame, revealing the spacing between the color blocks, dimensional lettering and bodywork."
-      ]
+      ],
+      "reference": {
+        "src": "preview-3d/research/volvo-xc70-exhibition-pexels-38773414.webp",
+        "title": [
+          "造型参考 · 低矮植栽分组",
+          "Form reference · Low clusters of planting"
+        ],
+        "copy": [
+          "照片把植栽收在几组低矮容器里，暗色硬质边界让叶面轮廓清楚。原作把低矮植栽放在车旁，给车侧轮廓留出空间。",
+          "Low planters group the foliage into distinct silhouettes. Low planting in the render similarly leaves the side of the car visible."
+        ],
+        "author": "Sofia Guzeva",
+        "source": "https://www.pexels.com/photo/modern-architectural-planters-with-green-foliage-38773414/",
+        "terms": "https://www.pexels.com/license/",
+        "license": [
+          "Pexels 许可",
+          "Pexels License"
+        ],
+        "width": 1050,
+        "height": 789
+      }
     },
     {
       "main": "04",
@@ -592,7 +692,27 @@ window.portfolioProjectStories = {
       "copy": [
         "接待区交代进入展厅时的第一眼，休息区则把画面转向坐下交流的尺度。",
         "The reception view shows the first impression on arrival. The lounge shifts the focus to the smaller scale of sitting and talking."
-      ]
+      ],
+      "reference": {
+        "src": "preview-3d/research/volvo-showroom-renovation-pexels-11899060.webp",
+        "title": [
+          "材质参考 · 木顶和浅色墙面",
+          "Material reference · Timber above pale walls"
+        ],
+        "copy": [
+          "照片里木色顶面在靠窗处接上浅色立面，日光勾出转折。休息区成片也将木色面收在上方，把靠近座席的竖向界面留浅。",
+          "Daylight makes the joint between the wood ceiling and pale surfaces legible. The lounge render likewise uses warm timber above lighter surfaces around the seating."
+        ],
+        "author": "Andrea Davis",
+        "source": "https://www.pexels.com/photo/a-wooden-inspired-living-room-11899060/",
+        "terms": "https://www.pexels.com/license/",
+        "license": [
+          "Pexels 许可",
+          "Pexels License"
+        ],
+        "width": 767,
+        "height": 1150
+      }
     },
     {
       "main": "01",

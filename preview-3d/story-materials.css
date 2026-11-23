@@ -51,3 +51,31 @@ html.mob-themed .case-tools{background:linear-gradient(to bottom,color-mix(in sr
 @media (max-width: 760px) {
   .editorial-reference-pair > .case-sourced-reference { margin-top: 0; }
 }
+
+.case-inline-reference { margin-bottom: 0; }
+:is(.gallery, .screen-views) > .case-inline-reference { grid-column: 1 / -1; }
+.case-inline-reference > .case-photo-reference { margin-top: 0; }
+.case-photo-reference,
+.case-photo-reference img { display: block; }
+.case-photo-reference img { width: 100%; height: auto; }
+.case-photo-reference figcaption {
+  display: block;
+  padding-top: 9px;
+  font-size: clamp(12px, 1vw, 14px);
+  line-height: 1.62;
+  text-align: left;
+}
+.case-photo-credit { display: block; }
+.case-photo-reference figcaption a {
+  display: inline;
+  color: inherit;
+  background: transparent;
+}
+@media (max-width: 760px) {
+  .case-photo-reference { width: min(78%, 248px); margin-left: auto; }
+}
+.story-note:has(> .case-inline-reference) {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+.story-note:has(> .case-inline-reference) > :first-child { max-width: 34rem; }

@@ -1,7 +1,8 @@
 {
-  "version": "2026-11-23.5",
-  "productionBaseline": "8a69adcde5afa549089c12b714df070f1fdf30b8",
+  "version": "2026-11-23.6",
+  "productionBaseline": "097d0ee3f794e98bdff19de0bc54df5243cdde56",
   "projects": 22,
   "originals": 186,
+  "references": 24,
   "hoverContrast": 1.8
 }

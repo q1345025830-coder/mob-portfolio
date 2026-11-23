@@ -35,6 +35,88 @@
         copy: ['掀开黄色盒盖后，黑色内托把物品依形状分开。较长的白色物件放在一侧，开盒时先读到一整排而不是一层散物。','Beneath the yellow lid, the black insert separates objects by shape. The long white piece sits at one side so the contents read as an arrangement when opened.'] }
     ],
   };
+  const shortReferences = {
+    "phev-2": {
+      "src": "preview-3d/research/phev-pexels-8108685.webp",
+      "title": [
+        "光影参考 · 折角灯带",
+        "Lighting reference · Lit corners"
+      ],
+      "copy": [
+        "照片的窄灯线在暗背景上勾出转角。展架正面的青色灯带同样让边缘先于暗色面板被看见。",
+        "Thin illuminated strips trace the corners against a dark background. Cyan light plays the same role against the display's dark panels."
+      ],
+      "author": "Mikhail Nilov",
+      "source": "https://www.pexels.com/photo/illuminated-strip-lights-8108685/",
+      "terms": "https://www.pexels.com/license/",
+      "license": [
+        "Pexels 许可",
+        "Pexels License"
+      ],
+      "width": 767,
+      "height": 1150
+    },
+    "new-year-2": {
+      "src": "preview-3d/research/new-year-pexels-6942302.webp",
+      "title": [
+        "结构参考 · 顶圈和吊杆",
+        "Structure reference · Canopy and suspension poles"
+      ],
+      "copy": [
+        "夜景中重复的垂直吊杆连接马形挂件和发光顶沿。原作把吊杆和挂件收进更小的顶圈，仍保留挂件之间的透视空隙。",
+        "Repeated vertical poles connect the carousel horses to the lit canopy edge. In the render, the smaller top ring keeps the poles and horses spaced apart."
+      ],
+      "author": "Daniel Eliashevsky",
+      "source": "https://www.pexels.com/photo/illuminated-carousel-with-horses-in-amusement-park-at-night-6942302/",
+      "terms": "https://www.pexels.com/license/",
+      "license": [
+        "Pexels 许可",
+        "Pexels License"
+      ],
+      "width": 1050,
+      "height": 700
+    },
+    "anniversary-3": {
+      "src": "preview-3d/research/anniversary-pexels-18956546.webp",
+      "title": [
+        "造型参考 · 红白路肩",
+        "Form reference · Alternating curb markings"
+      ],
+      "copy": [
+        "照片中连续的红白块沿弯道标出车道边界。CT5 展位将这种递进色块拉直到车身两侧，让台面边缘有清楚的赛道节奏。",
+        "Alternating red and white blocks mark the edge of the track. The CT5 display straightens that rhythm on either side of the car to define the platform."
+      ],
+      "author": "Moe Bodden",
+      "source": "https://www.pexels.com/photo/sports-car-on-racetrack-18956546/",
+      "terms": "https://www.pexels.com/license/",
+      "license": [
+        "Pexels 许可",
+        "Pexels License"
+      ],
+      "width": 767,
+      "height": 1150
+    },
+    "yangshuo-4": {
+      "src": "preview-3d/research/yangshuo-pexels-31651860.webp",
+      "title": [
+        "结构参考 · 按形开槽的内托",
+        "Structure reference · Fitted box insert"
+      ],
+      "copy": [
+        "照片中的黑色内托让杯壶各占一个清楚的位置。原案同样按物件形状开槽，用深色内托隔开浅色物件。",
+        "The dark insert gives each cup and vessel its own recess. The project similarly fits the objects into shaped compartments to separate the lighter contents."
+      ],
+      "author": "qua tet tra viet",
+      "source": "https://www.pexels.com/photo/elegant-glass-tea-set-in-gift-box-packaging-31651860/",
+      "terms": "https://www.pexels.com/license/",
+      "license": [
+        "Pexels 许可",
+        "Pexels License"
+      ],
+      "width": 1050,
+      "height": 1050
+    }
+  };
   for (const project of shorts) {
     const readings = shortChapters[project.id];
     if (!readings) continue;
@@ -45,6 +127,7 @@
       copy:{zh:copy[0],en:copy[1]},
       main:media.map(id => byMedia.get(id)).filter(Boolean),
       supporting:[],
+      reference:media.map(id => shortReferences[id]).find(Boolean),
     })).filter(chapter => chapter.main.length);
     if (!chapters.length) continue;
     const placed = new Set(chapters.flatMap(chapter => chapter.main));
@@ -518,6 +601,18 @@
   function renderChapter(section,index) {
     const {main:images,supporting}=section;
     const title='<header class="chapter-heading"><h2>'+escape(tr(section.title))+'</h2><p>'+escape(tr(section.copy))+'</p></header>';
+    if(section.reference) {
+      const ref=section.reference;
+      const locale=lang==='en'?1:0;
+      const titleText=escape(ref.title[locale]);
+      const reference='<figure class="story-study case-sourced-reference case-photo-reference">'+
+        '<img src="../'+escape(ref.src)+'" width="'+ref.width+'" height="'+ref.height+'" loading="lazy" decoding="async" alt="'+titleText+'">'+
+        '<figcaption><strong>'+titleText+'</strong><p>'+escape(ref.copy[locale])+'</p>'+
+        '<span class="case-photo-credit"><a href="'+escape(ref.source)+'">'+escape(ref.author)+'</a> · <a href="'+escape(ref.terms)+'">'+escape(ref.license[locale])+'</a></span></figcaption></figure>';
+      return '<section class="chapter" id="chapter-'+index+'">'+title+
+        '<div class="editorial-reference-pair case-inline-reference">'+figureMarkup(images[0],'paired')+reference+'</div>'+
+        images.slice(1).map(img=>figureMarkup(img,'support')).join('')+'</section>';
+    }
     if(section.comparison) {
       return '<section class="chapter comparison-chapter" id="chapter-'+index+'">'+title+
         '<div class="image-pair comparison-pair">'+images.map(img=>figureMarkup(img,'comparison')).join('')+'</div>'+
