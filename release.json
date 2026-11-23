@@ -1,6 +1,7 @@
 {
-  "version": "2026-11-23.8",
+  "version": "2026-11-23.9",
   "productionBaseline": "8bade1c7af666b235e5c9b400023268664ee8a91",
+  "previous": "fe537ac8371accaba8dab95f9c3795055faedb55",
   "projects": 23,
   "originals": 195,
   "references": 25,
