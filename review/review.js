@@ -1,6 +1,19 @@
 (() => {
   'use strict';
   const {projects,shorts}=window.reviewContent;
+  // The public and local review data share media IDs, including responsive variants.
+  const excluded = new Set(['new-year-4', 'retail-2', 'yangshuo-3']);
+  for (const item of [...projects,...shorts]) {
+    const keep = image => !excluded.has(image.media) && !image.src?.includes('/studies/');
+    item.sections = item.sections.map(section => ({...section, main:section.main.filter(keep), supporting:section.supporting.filter(keep)}))
+      .filter(section => section.main.length || section.supporting.length);
+    if (item.archive) item.archive = item.archive.filter(keep);
+  }
+  const gridPath = new URL('../preview-3d/index.html', location.href);
+  const referrer = document.referrer && new URL(document.referrer);
+  if (referrer && referrer.origin === gridPath.origin && referrer.pathname === gridPath.pathname) {
+    history.replaceState({...history.state, fromMobGrid:true}, '');
+  }
   const main=document.querySelector('main');
   const viewer=document.querySelector('.viewer');
   const viewerStage=viewer.querySelector('.viewer-stage');
@@ -21,7 +34,7 @@
     images:['浏览图集','Browse images'],open:['查看高清图','View full resolution'],
     read:['向下阅读','Read the case'],
     video:['播放动画','Play animation'],play:['播放','Play'],
-    design:['设计说明','Design notes'],designHeading:['设计灵感与说明','Inspiration & design'],
+    design:['设计说明','Design notes'],designHeading:['设计说明','Design notes'],
     related:['下一件作品','Next project'],contactEmpty:['联系信息待补充。','Contact details to be supplied.']
   };
   function load(key,fallback) {
@@ -34,7 +47,6 @@
   }
   let lang=load('lang','zh')==='en'?'en':'zh';
   let state={group:'cases',mode:'spiral',cases:0,shorts:0,y:0,...load('home',{})};
-  if (!projects.length) state.group='shorts';
   let autoPaused=load('autoplay-paused',false)===true;
   let route='';
   let transition=null;
@@ -110,9 +122,9 @@
         (grid?'<div class="list-info"><span class="meta">'+escape([p.brand,tr(p.category)].filter(Boolean).join(' / '))+'</span><h2>'+escape(tr(p.title))+'</h2></div><span class="list-open" aria-hidden="true">↗</span>':'')+'</a>';
     }).join('');
     const intro='<div class="work-heading"><p class="eyebrow">AUTOMOTIVE / SPATIAL DESIGN</p><h1>'+word('intro')+'</h1></div>';
-    const tabs=projects.length?'<div class="tabs" role="group" aria-label="'+word('collection')+'">'+
+    const tabs='<div class="tabs" role="group" aria-label="'+word('collection')+'">'+
       modeButton('cases',state.group==='cases','group')+modeButton('shorts',state.group==='shorts','group')+
-      '</div>':'';
+      '</div>';
     const modes='<div class="segments glass" role="group" aria-label="'+word('mode')+'">'+
       modeButton('spiral',!grid,'mode')+modeButton('list',grid,'mode')+'</div>';
     main.innerHTML=grid?'<div class="frame work-page catalog-page'+(changingMode?' mode-in':'')+'"><div class="work-intro">'+intro+'<p class="work-summary">'+word('sub')+'</p></div>'+
@@ -482,19 +494,28 @@
     const caseAction='<div class="case-jumps"><button class="glass" data-jump="design-heading" type="button">'+word('design')+'</button>'+
       (p.short?'':'<button class="glass" data-jump="gallery-heading" type="button">'+word('images')+'</button>')+'</div>';
     main.innerHTML='<article class="case-page" style="--tone:'+p.tone+'"><div class="case-tools frame"><a class="glass back" href="#work"><span aria-hidden="true">‹</span> '+word('back')+'</a>'+
-      caseAction+'</div><section class="case-screen" aria-label="'+escape(tr(p.title))+'">'+figureMarkup(p.cover,'hero',true)+
+      (p.video?'<button class="glass" data-jump="case-film" type="button">▶ '+word('video')+'</button>':'')+caseAction+'</div><section class="case-screen" aria-label="'+escape(tr(p.title))+'">'+figureMarkup(p.cover,'hero',true)+
       '<div class="screen-bar frame"><span class="screen-meta">'+escape(sectionHead)+'</span><button class="screen-read" data-jump="case-intro" type="button">'+word('read')+' <span aria-hidden="true">↓</span></button></div></section>'+
       '<div class="case-paper"><div class="case-reading"><header class="case-heading" id="case-intro" tabindex="-1"><div><p class="eyebrow">'+escape(sectionHead)+'</p><h1>'+escape(tr(p.title))+'</h1></div>'+
       (p.lead?'<p class="case-lead">'+escape(tr(p.lead))+'</p>':'')+'</header>'+
+      (p.video?'<section class="clip mob-clip" id="case-film" tabindex="-1"><h2>'+escape(tr(p.title))+' · '+word('video')+'</h2><video controls playsinline muted loop preload="none" poster="'+escape(imageInfo(p.cover).src)+'"><source src="media/'+p.id+'-preview.webm" type="video/webm"><source src="'+p.video+'" type="video/mp4"></video><a href="'+p.video+'">▶ 完整原片 · '+(p.id==='new-year'?'8':'10')+' 秒</a></section>':'')+
       '<div class="design-section"><h2 class="design-label eyebrow" id="design-heading" tabindex="-1">'+word('designHeading')+'</h2>'+
       chapters.map(renderChapter).join('')+'</div>'+
-      (p.video?'<section class="clip"><h2>'+word('video')+'</h2><button type="button" class="glass" data-video="'+p.video+'">'+word('play')+'</button></section>':'')+
-      (p.short?'':'<section class="gallery" id="gallery"><header><h2 id="gallery-heading" tabindex="-1">'+word('gallery')+'</h2>'+(p.source?'<a href="'+p.source+'" target="_blank" rel="noopener">'+escape(tr(p.sourceLabel))+'</a>':'')+
+
+      (gallery.length<=1?'':'<section class="gallery" id="gallery"><header><h2 id="gallery-heading" tabindex="-1">'+word('gallery')+'</h2>'+(p.source?'<a href="'+p.source+'" target="_blank" rel="noopener">'+escape(tr(p.sourceLabel))+'</a>':'')+
         '</header><div class="gallery-grid">'+gallery.map((img,i)=>'<button type="button" data-image="'+i+'" aria-label="'+escape(word('open')+' · '+tr(img.caption))+'">'+picture(img,'(max-width: 760px) 28vw, 14vw')+'</button>').join('')+
         '</div></section>')+'</div></div>'+
       '<footer class="case-footer"><div class="frame case-footer-inner"><a class="back" href="#work"><span aria-hidden="true">‹</span> '+word('back')+'</a>'+
       '<a href="'+coverLink(next)+'" class="related">'+picture(next.cover,'(max-width: 760px) 87vw, 55vw')+
       '<div><span class="meta">'+word('related')+'</span><strong>'+escape(tr(next.title))+'</strong></div></a></div></footer></article>';
+    const film=main.querySelector('.mob-clip video');
+    if(film && !reduced.matches && !navigator.connection?.saveData){
+      const observer=new IntersectionObserver(entries=>{
+        if(!film.isConnected){observer.disconnect();return;}
+        if(entries[0].isIntersecting) film.play().catch(()=>{});
+        else film.pause();
+      },{threshold:.35}); observer.observe(film);
+    }
     if(!reduced.matches&&'IntersectionObserver' in window) {
       caseReveal=new IntersectionObserver(entries=>{
         for(const entry of entries) {
@@ -727,6 +748,9 @@
     if(e.defaultPrevented) return;
     const button=e.target.closest('button');
     const link=e.target.closest('a');
+    if(link?.matches('.case-tools .back, .case-footer .back') && history.state?.fromMobGrid && !e.ctrlKey && !e.metaKey){
+      e.preventDefault();history.back();return;
+    }
     if(button?.matches('.language')) {
       state.y=route==='#work'?scrollY:state.y;
       const y=scrollY;

@@ -20,6 +20,10 @@ const fragmentSource = `
 `;
 
 const gridColumns = 5;
+const hoverTint = [.94, .94, .97];
+const hoverContrast = 1.5;
+// Matches the background beneath the transparent WebGL scene in preview.css.
+const gridBackground = 10;
 
 export const clamp = (value, low, high) => Math.min(high, Math.max(low, value));
 const wrap = (value, count) => ((value % count) + count) % count;
@@ -201,7 +205,7 @@ export function requestCover(picture, sizes, priority = 'auto', loading = 'eager
   picture.loading = loading;
   picture.fetchPriority = priority;
   picture.sizes = sizes;
-  picture.srcset = picture.dataset.srcset;
+  if (picture.dataset.srcset) picture.srcset = picture.dataset.srcset;
   picture.src = picture.dataset.src;
 }
 
@@ -316,6 +320,12 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
     texture: null, picture: link.querySelector('img'),
     artwork: link.querySelector('.artwork'), labels: [...link.querySelectorAll('.project-meta')],
   }));
+  // Embed a small RGB copy of each cover so the first painted frame has imagery.
+  for (const card of cards) {
+    const pixels = Uint8Array.from(atob(card.picture.dataset.pixels), value => value.charCodeAt(0));
+    card.texture = textureFor(gl);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 32, 20, 0, gl.RGB, gl.UNSIGNED_BYTE, pixels);
+  }
   const byId = new Map(cards.map(card => [card.id,card]));
   const copies = new Map();
   const fades = new Map();
@@ -361,7 +371,20 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
     const swatch = document.createElement('canvas');
     swatch.width = swatch.height = 3;
     const painter = swatch.getContext('2d');
-    painter.drawImage(card.picture,0,0,3,3);
+    painter.drawImage(card.picture, 0, 0, 3, 3);
+    const field = painter.getImageData(0, 0, 3, 3);
+    for (let i = 0; i < field.data.length; i += 4) {
+      const luma = .2126 * field.data[i] + .7152 * field.data[i + 1] + .0722 * field.data[i + 2];
+      // Neutral or light covers still yield a dim background. Keep the original cover untouched.
+      const shade = 13 + Math.min(36, luma * .22);
+      for (let channel = 0; channel < 3; channel++) {
+        const previous = clamp(shade + (field.data[i + channel] - luma) * .28, 8, 62);
+        // Compensate for the tint so the blended hover pixel is 1.5× farther from the resting color.
+        const base = gridBackground / hoverTint[channel];
+        field.data[i + channel] = base + (previous - base) * hoverContrast;
+      }
+    }
+    painter.putImageData(field, 0, 0);
     card.field ??= textureFor(gl);
     gl.bindTexture(gl.TEXTURE_2D, card.field);
     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,swatch);
@@ -376,6 +399,16 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
     card.picture.addEventListener('load', () => upload(card), { signal });
     card.picture.addEventListener('error', () => {
       finishRequest(card);
+      if (!card.retried) {
+        card.retried = true;
+        setTimeout(() => {
+          if (signal.aborted) return;
+          const url = new URL(card.picture.dataset.src, document.baseURI);
+          url.searchParams.set('retry', '1');
+          card.picture.removeAttribute('srcset');
+          card.picture.src = url.href;
+        }, 900);
+      }
       onRedraw();
     }, { signal });
   }
@@ -393,11 +426,11 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
   }
 
   function loadNearby(cards, layout, dpr, view) {
-    const atHome = view.x === layout.homeX && view.y === layout.homeY && view.pull < .02;
-    const reach = atHome ? 0 : Math.min(124, layout.stepX * .30);
+    
+    const reach = layout.stepX * .95;
     const queue = cards.filter(entry => !entry.card.requested && entry.distance <= reach)
       .sort((a, b) => a.distance - b.distance || b.area - a.area);
-    for (const { card, art, distance } of queue.slice(0, Math.max(0, 4 - pending))) {
+    for (const { card, art, distance } of queue.slice(0, Math.max(0, 6 - pending))) {
       if (card.requested) continue;
       pending++;
       card.requested = card.pending = true;
@@ -477,8 +510,8 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
         gl.bindTexture(gl.TEXTURE_2D,card.field || solid);
         const flat=stage.dataset.hoverStyle==='flat';
         if (flat) gl.bindTexture(gl.TEXTURE_2D,solid);
-        const tint = flat ? [.16, .31, .47] : [.68, .68, .73];
-        gl.uniform4f(tone, ...tint, level * .85);
+        const tint = flat ? [.16, .31, .47] : hoverTint;
+        gl.uniform4f(tone, ...tint, level * .90);
         gl.bufferSubData(gl.ARRAY_BUFFER,0,mesh);
         gl.drawElements(gl.TRIANGLES,indices.length,gl.UNSIGNED_SHORT,0);
       }
@@ -487,8 +520,8 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
       const polygon = meshRect(art);
       positionLink(target, polygon, corners, layout, view, layer + 1);
       const brightness = .995 - (1 - center.scale) * .29 + (selected ? .045 : 0);
-      gl.bindTexture(gl.TEXTURE_2D, card.loaded ? card.texture : solid);
-      const shade = card.loaded ? brightness : .069;
+      gl.bindTexture(gl.TEXTURE_2D, card.texture);
+      const shade = brightness;
       gl.uniform4f(tone, shade, shade, shade, 1);
       gl.bufferSubData(gl.ARRAY_BUFFER, 0, mesh);
       gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);

@@ -157,8 +157,8 @@ function tick(now) {
   lastFrame = now;
   let moving = false;
   if (!press && !leaving && !reduced.matches) {
-    const fraction = smoothing(5.8, seconds);
-    const next = { x: view.x + velocity.x * fraction / 5.8, y: view.y + velocity.y * fraction / 5.8 };
+    const fraction = smoothing(4.3, seconds);
+    const next = { x: view.x + velocity.x * fraction / 4.3, y: view.y + velocity.y * fraction / 4.3 };
 
     for (const axis of ['x', 'y']) {
       view[axis] = next[axis];
@@ -172,8 +172,8 @@ function tick(now) {
   const target = allowDrift ? relativePoint(mouse.x, mouse.y) : null;
   const goals = {
     pull: reduced.matches ? 0 : press?.dragging ? 1 : press ? view.pull : 0,
-    driftX: target ? -clamp((target.x / layout.width - .5) * 20, -10, 10) : press ? view.driftX : 0,
-    driftY: target ? -clamp((target.y / layout.height - .5) * 14, -7, 7) : press ? view.driftY : 0,
+    driftX: target ? -clamp((target.x / layout.width - .5) * 44, -22, 22) : press ? view.driftX : 0,
+    driftY: target ? -clamp((target.y / layout.height - .5) * 32, -16, 16) : press ? view.driftY : 0,
   };
   for (const property of ['pull', 'driftX', 'driftY']) {
     const delta = goals[property] - view[property];
@@ -332,8 +332,8 @@ function endPress(event, release) {
       if (end.time - last.time <= 105) {
         const first = drag.samples.find(point => end.time - point.time <= 105) || last;
         const seconds = Math.max(.025, (end.time - first.time) / 1000);
-        velocity.x = clamp((first.x - end.x) / layout.stepX / seconds, -2.75, 2.75);
-        velocity.y = clamp((first.y - end.y) / layout.stepY / seconds, -2.75, 2.75);
+        velocity.x = clamp((first.x - end.x) / layout.stepX / seconds, -4, 4);
+        velocity.y = clamp((first.y - end.y) / layout.stepY / seconds, -4, 4);
       }
     }
   }

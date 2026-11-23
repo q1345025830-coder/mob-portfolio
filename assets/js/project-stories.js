@@ -33,8 +33,16 @@ window.portfolioProjectStories = {
   ],
   'ct6-creative-exhibition': [
     {
-      main: 'fluid-a', supporting: ['fluid-b'], study: 'ct6',
-      studyLabel: ['形态参考 · 黑色磁流变液的尖峰与液面（概念图）', 'Form reference · peaks and surface of black magnetorheological fluid (concept image)'],
+      main: 'fluid-a', supporting: ['fluid-b'], reference: {
+        src: 'preview-3d/research/ferrofluid-17-spikes.webp',
+        title: ['形态参考 · 磁流体液面', 'Form reference · Ferrofluid surface'],
+        copy: ['尖峰从连续的黑色液面聚起，冷灰高光沿峰面转折。并看两张圆罩渲染，可辨认出中央峰簇与外围较低的液滴。', 'Peaks gather on a continuous black surface, with cool highlights tracing their faces. The two dome renders show a central cluster and lower droplets around it.'],
+        author: 'Error406 · Wikimedia Commons',
+        source: 'https://commons.wikimedia.org/wiki/File:Ferrofluid17spike.JPG',
+        terms: 'https://commons.wikimedia.org/wiki/File:Ferrofluid17spike.JPG#Licensing',
+        license: ['公有领域', 'Public domain'],
+        edits: ['冷调处理与缩放', 'Cool color grade and resize'],
+      },
       title: ['让磁流变液的变化可见', 'Making the change in the fluid visible'],
       copy: ['两种装置状态并排，便于看出深色形态在透明圆罩内的变化。磁流变液让 CT6 的悬挂技术在展台上有了一个可以近看的切入点。', 'The two renderings show how the dark form changes beneath the clear dome. The magnetorheological fluid display gives visitors an up-close entry point into the CT6 suspension story.'],
     },
@@ -84,10 +92,17 @@ window.portfolioProjectStories = {
   ],
   'hailar-ice-drive': [
     {
-      main: '03', supporting: ['02'], study: 'ice',
-      studyLabel: ['冰层折光研究', 'Light through fractured ice'],
+      main: '03', supporting: ['02'], reference: {
+        src: 'preview-3d/research/ice-block-edges.webp',
+        title: ['材质参考 · 透明冰体', 'Material reference · Clear ice'],
+        copy: ['近照中，清透的冰沿与雾白冰芯同时可见。对照第一张夜景，发光冰体的边角更亮，内层把红蓝光散开。', 'The close-up shows clear edges and a cloudy interior. In the night rendering above, the ice block has brighter corners and an inner layer that diffuses the red and blue light.'],
+        author: 'Julia Volk · Pexels',
+        source: 'https://www.pexels.com/photo/close-up-of-clear-ice-blocks-7099864/',
+        terms: 'https://www.pexels.com/license/',
+        license: ['Pexels 许可', 'Pexels license'],
+      },
       title: ['用冰与镜面接住冷光', 'How ice and mirrors catch cold light'],
-      copy: ['冰体里的透光与镜面上的反射让雪地里的展车有清晰轮廓。材质意象提取冰层折射，项目原图呈现它在现场画面中的表达。', 'Light through the ice and reflections in the mirrors give the vehicle a clear silhouette in the snow. The material study isolates the quality of the light, while the project render shows it in context.'],
+      copy: ['冰体里的透光与镜面上的反射让雪地里的展车有清晰轮廓。近看立方体的亮边，再对照雪地里的低反光区域，能看清冷光集中在何处。', 'Light through the ice and reflections in the mirrors give the vehicle a clear silhouette in the snow. The cube’s lit edges stand out against the less reflective snow.'],
     },
     {
       main: '14', supporting: ['07'],
@@ -113,7 +128,7 @@ window.portfolioProjectStories = {
       main: '06', supporting: ['02'], study: 'xc70',
       studyLabel: ['绿色展具 · 色彩参考', 'Green display blocks · Color reference'],
       title: ['同一套视觉语言，两种展台尺度', 'One visual language at two display scales'],
-      copy: ['从双车到单车，绿色展具和克制的陈列留白延续了同一套视觉语言，车身数量改变后依然能读出同一个项目。', 'The green display elements and restrained spacing carry the visual language from two cars to one, keeping both configurations recognizable as part of the same project.'],
+      copy: ['双车方案把两台车分在白色地台的两端，中段留给绿色展具。单车方案把展具靠到车尾一侧，车前保留一段完整的白色台面。', 'The two-car layout places the cars at either end of the white platform and leaves its middle for the green display elements. In the single-car layout, those elements sit near the rear, leaving the white platform open in front.'],
     },
     {
       main: '05', supporting: ['08'],

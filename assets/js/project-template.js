@@ -28,29 +28,26 @@ window.renderProject = ({project,t,esc,link,lang,image}) => {
       ${indices.map(i => figure(i, '', false, paired ? halfWidth : fullWidth)).join('')}
     </div>`;
   };
-  const renderStory = ({main, supporting, study, studyLabel, title, copy}) => {
+  const renderStory = ({ main, supporting, title, copy, reference }) => {
     const heading = `<h2>${esc(title[locale].replaceAll('|', ' '))}</h2>`;
     const description = `<p class="editorial-description">${esc(copy[locale])}</p>`;
-    const indices = supporting.map(imageIndex);
-    if (!study) {
-      return `<section class="editorial-story">
-        <div class="editorial-heading">${heading}${description}</div>
-        ${renderViews([imageIndex(main), ...indices])}
-      </section>`;
-    }
+    const views = renderViews([imageIndex(main), ...supporting.map(imageIndex)]);
+    const comparison = reference ? `
+      <div class="editorial-reference-pair">
+        ${views}
+        <figure class="story-study case-sourced-reference">
+          <img src="${esc(reference.src)}" loading="lazy" decoding="async" alt="${esc(reference.title[locale])}">
+          <figcaption><strong>${esc(reference.title[locale])}</strong>
+            <p>${esc(reference.copy[locale])}</p>
+            <a href="${esc(reference.source)}">${esc(reference.author)}</a> ·
+            <a href="${esc(reference.terms)}">${esc(reference.license[locale])}</a>
+            ${reference.edits ? ' · ' + esc(reference.edits[locale]) : ''}
+          </figcaption>
+        </figure>
+      </div>` : views;
     return `<section class="editorial-story">
-      <div class="editorial-spread">
-        ${heading}
-        ${figure(imageIndex(main), 'editorial-primary', false, '(max-width: 760px) 100vw, 63vw')}
-        <div class="editorial-aside">
-          <figure class="story-study">
-            <img src="assets/images/studies/${esc(study)}.webp" alt="${esc(studyLabel[locale])}" loading="lazy" decoding="async">
-            <figcaption>${esc(studyLabel[locale])}</figcaption>
-          </figure>
-          ${description}
-        </div>
-      </div>
-      ${indices.length ? renderViews(indices) : ''}
+      <div class="editorial-heading">${heading}${description}</div>
+      ${comparison}
     </section>`;
   };
   const featuredImages = new Set([0, ...(stories ?? []).flatMap(story => [story.main, ...story.supporting]).map(imageIndex)]);
@@ -78,7 +75,7 @@ window.renderProject = ({project,t,esc,link,lang,image}) => {
         ${renderViews(remainingImages)}
       </section>` : ''}
     </div>
-    ${isShort || stories ? '' : `<section class="case-archive" aria-labelledby="archive-title">
+    ${isShort || (stories && project.id !== 'volvo-xc70-exhibition') ? '' : `<section class="case-archive" aria-labelledby="archive-title">
       <div class="archive-heading" data-reveal><div><span class="eyebrow">IMAGE INDEX</span><h2 id="archive-title">${t('项目影像','Project images')}</h2></div><span>${project.images.length} ${project.imageLabel?esc(project.imageLabel[lang]):t('张渲染图','RENDERINGS')}</span></div>
       <div class="archive-grid">${project.images.map((entry,i)=>`<button class="archive-item zoom-trigger" data-index="${i}" aria-label="${esc(t('放大：','Enlarge: ')+entry.caption[lang])}"><span class="archive-image"><img src="${esc(entry.src.replace('-1600.jpg','-768.jpg'))}" width="${entry.width}" height="${entry.height}" alt="${esc(entry.alt[lang])}" loading="lazy" decoding="async"></span><span class="archive-caption"><span>${String(i+1).padStart(2,'0')}</span><span>${esc(entry.caption[lang])}</span><span aria-hidden="true">↗</span></span></button>`).join('')}</div>
     </section>`}
