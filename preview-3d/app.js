@@ -1,4 +1,4 @@
-import { clamp, createScene, layoutFor, requestCover, viewForTile } from './surface.js?v=1124-7';
+import { clamp, createScene, layoutFor, requestCover, viewForTile } from './surface.js?v=1124-8';
 
 const stage = document.querySelector('.stage');
 stage.dataset.renderer = 'starting';
@@ -23,8 +23,9 @@ let layout = layoutFor(innerWidth, innerHeight, projectIds);
 let preferredKey;
 let scene, press, mouse, hovered, returned, leaving;
 let ready = false, gridStarted = false, suppressClick = false, restoring = false;
-let frame = 0, lastFrame = 0, exitTimer = 0;
-let exitCurtain;
+let frame = 0, lastFrame = 0;
+let exitCurtain, exitViewTransition;
+let preparedCase, previewTimer;
 
 if (new URLSearchParams(location.search).has('diagnose')) {
   stage.mobMotionSample = () => ({ ...view, hovering: hovered?.dataset.project || null,
@@ -194,6 +195,7 @@ function tick(now) {
 
   const hover = !press && !leaving && mouse ? linkAt(mouse.x, mouse.y) : null;
   const focused = document.activeElement?.matches('.project:focus-visible') ? document.activeElement : null;
+  if (hover !== hovered && mouse && !press && !leaving) scheduleCase(hover);
   highlight(leaving || hover || focused || returned || null);
   try {
     scene?.draw(layout, view, press ? null : hovered, hover === hovered && mouse ? relativePoint(mouse.x,mouse.y) : null, preferredKey);
@@ -247,11 +249,12 @@ function clearReturned() {
 }
 
 function restoreEntry(resetOnReload = false) {
-  clearTimeout(exitTimer);
   leaving = null;
   delete document.body.dataset.caseTheme;
   exitCurtain?.remove();
   exitCurtain = null;
+  exitViewTransition?.remove();
+  exitViewTransition = null;
   stage.classList.remove('is-leaving', 'is-case-leaving', 'is-dragging');
   clearReturned();
   stopGlide();
@@ -444,13 +447,55 @@ stage.addEventListener('click', event => {
   exitToProject(link);
 });
 
+function prepareCase(link) {
+  const target = new URL(link.href);
+  target.hash = '';
+  const href = target.href;
+  if (preparedCase?.href === href) return preparedCase.ready;
+
+  preparedCase?.controller.abort();
+  for (const node of preparedCase?.assets || []) node.remove();
+  const controller = new AbortController();
+  const preparation = { href, controller, assets: [] };
+  preparedCase = preparation;
+  preparation.ready = fetch(href, {
+    signal: controller.signal,
+    headers: { Accept: 'text/html' },
+  }).then(async response => {
+    if (!response.ok || preparation !== preparedCase) return;
+    const parsed = document.createElement('template');
+    parsed.innerHTML = await response.text();
+    if (preparation !== preparedCase) return;
+    const cacheable = parsed.content.querySelectorAll('link[rel="stylesheet"], link[data-first-preview], script[src*="case-arrival.js"]');
+    for (const asset of cacheable) {
+      const url = new URL(asset.getAttribute('href') || asset.getAttribute('src'), href);
+      if (url.origin !== location.origin) continue;
+      const hint = document.createElement('link');
+      hint.rel = 'preload';
+      hint.as = asset.hasAttribute('data-first-preview') ? 'image' : asset.tagName === 'SCRIPT' ? 'script' : 'style';
+      hint.href = url.href;
+      hint.fetchPriority = hint.as === 'style' ? 'auto' : 'low';
+      preparation.assets.push(hint);
+      document.head.append(hint);
+    }
+  }).catch(() => {});
+  return preparation.ready;
+}
+
+function scheduleCase(link) {
+  clearTimeout(previewTimer);
+  if (!link?.dataset.caseTheme || leaving || restoring || reduced.matches) return;
+  previewTimer = setTimeout(() => prepareCase(link), 170);
+}
+
 function exitToProject(link) {
   leaving = link;
+  clearTimeout(previewTimer);
   stopGlide();
   const { caseTheme } = link.dataset;
-  const entersCase = Boolean(caseTheme) || link.hasAttribute('data-case-transition');
-  if (!entersCase) {
-    exitTimer = setTimeout(() => location.assign(link.href), 175);
+  const url = new URL(link.href);
+  if ((!caseTheme && !link.hasAttribute('data-case-transition')) || reduced.matches) {
+    location.assign(url.href);
     return;
   }
   if (caseTheme) document.body.dataset.caseTheme = caseTheme;
@@ -458,19 +503,6 @@ function exitToProject(link) {
   const curtain = document.createElement('div');
   curtain.className = 'mob-entry-curtain';
   curtain.setAttribute('aria-hidden', 'true');
-  const title = links.find(card => card.dataset.project === link.dataset.project)?.querySelector('.project-meta.name')?.textContent.trim();
-  let heading;
-  if (title) {
-    heading = document.createElement('span');
-    heading.className = 'mob-handoff-title';
-    heading.textContent = title;
-    curtain.append(heading);
-  }
-  const url = new URL(link.href);
-  const prefetch = document.createElement('link');
-  prefetch.rel = 'prefetch';
-  prefetch.href = url.href;
-  document.head.append(prefetch);
   document.body.append(curtain);
   exitCurtain = curtain;
 
@@ -478,47 +510,41 @@ function exitToProject(link) {
   function navigate() {
     if (sent || leaving !== link) return;
     sent = true;
-    clearTimeout(exitTimer);
-    if (!reduced.matches) {
+      if (!reduced.matches) {
       try {
         sessionStorage.setItem('mobCaseArrival', JSON.stringify({
           destination: url.pathname + url.search + url.hash,
           color: getComputedStyle(curtain).backgroundColor,
-          title,
           sentAt: Date.now(),
         }));
-      } catch { /* The destination can still use its normal direct entry. */ }
+      } catch { /* Standard navigation still works with storage disabled. */ }
+    }
+    if (!reduced.matches && 'PageSwapEvent' in window) {
+      exitViewTransition = document.createElement('style');
+      exitViewTransition.textContent = '@view-transition { navigation: auto; types: mob-entry; }';
+      document.head.append(exitViewTransition);
     }
     location.assign(url.href);
   }
-  function covered() {
-    if (sent || leaving !== link || curtain.classList.contains('is-covered')) return;
-    curtain.classList.add('is-covered');
-    const deadline = performance.now() + 160;
-    // Keep this document on screen until the title has started painting over the color.
-    function holdForTitle() {
-      if (sent || leaving !== link) return;
-      if (heading && Number(getComputedStyle(heading).opacity) < .25 && performance.now() < deadline) {
-        requestAnimationFrame(holdForTitle);
-        return;
-      }
-      requestAnimationFrame(() => requestAnimationFrame(navigate));
-    }
-    requestAnimationFrame(holdForTitle);
-  }
-  curtain.addEventListener('animationend', covered, { once: true });
-  curtain.addEventListener('animationcancel', covered, { once: true });
-  requestAnimationFrame(() => {
+
+  requestAnimationFrame(() => requestAnimationFrame(() => {
     if (leaving === link) curtain.classList.add('is-rising');
-  });
-  exitTimer = setTimeout(() => {
-    if (document.hidden || reduced.matches) navigate();
-    else {
-      covered();
-      exitTimer = setTimeout(navigate, 180);
-    }
-  }, 740);
+  }));
+  Promise.all([
+    new Promise(resolve => setTimeout(resolve, 118)),
+    Promise.race([prepareCase(link), new Promise(resolve => setTimeout(resolve, 970))]),
+  ]).then(navigate);
 }
+
+stage.addEventListener('pointerover', event => {
+  if (!ready && event.pointerType !== 'touch') scheduleCase(event.target.closest('a.project'));
+});
+stage.addEventListener('pointerleave', () => clearTimeout(previewTimer));
+stage.addEventListener('focusin', event => scheduleCase(event.target.closest('a.project')));
+list.addEventListener('pointerover', event => {
+  if (event.pointerType !== 'touch') scheduleCase(event.target.closest('.project-row'));
+});
+list.addEventListener('focusin', event => scheduleCase(event.target.closest('.project-row')));
 
 reset.addEventListener('click', () => {
   if (leaving) return;
@@ -539,6 +565,17 @@ reduced.addEventListener('change', () => {
 });
 window.addEventListener('pageshow', event => {
   if (event.persisted) restoreEntry();
+});
+window.addEventListener('pageswap', event => {
+  const transition = event.viewTransition;
+  if (!transition) return;
+  transition.ready.catch(() => {});
+  transition.finished.catch(() => {});
+  if (leaving && exitViewTransition) transition.types?.add('mob-entry');
+});
+window.addEventListener('pagereveal', event => {
+  event.viewTransition?.ready.catch(() => {});
+  event.viewTransition?.finished.catch(() => {});
 });
 window.addEventListener('pagehide', () => saveEntry(history.state?.[stateKey]?.projectId));
 

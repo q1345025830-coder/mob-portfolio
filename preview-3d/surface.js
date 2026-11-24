@@ -114,27 +114,37 @@ export function project(x, y, layout, view) {
   const zoom = 1 / (1 + view.pull * (narrow ? .045 : .145));
   const dx = (x - view.x * stepX + view.driftX) * zoom;
   const dy = (y - view.y * stepY + view.driftY) * zoom;
+  if (narrow) return projectPhone(dx, dy, y - view.y * stepY, layout, zoom);
+  const u = (dx / (width * .54)) ** 2;
+  const v = (dy / (height * .68)) ** 2;
+  const scale = 1 / (1 + .168 * u / (1 + .63 * u) + .044 * v / (1 + .40 * v));
+  // A restrained cross-axis term wraps the sides without pulling open the corners.
+  const side = u / (.65 + u);
+  const cross = (.10 + .055 * wide) * side;
+  const horizontal = dx * scale * (1 + cross * v / (.75 + v));
+  const radius = (2 * horizontal / width) ** 2;
+  const edge = 1.36 * radius / (.49 + radius);
+  const fromSeam = y - view.y * stepY;
+  const bend = fromSeam / (1 + .32 * (fromSeam / stepY) ** 2);
+  const bow = bend * zoom * edge * (.198 + .026 * wide);
+  // Keep the lens centered on the viewport as the repeated plane moves beneath it.
+  return {
+    x: width * .5 + horizontal,
+    y: height * .49 + dy + bow,
+    scale,
+  };
+}
+
+function projectPhone(dx, dy, fromSeam, { width, height, stepY }, zoom) {
   const u = (dx / (width * .54)) ** 2;
   const v = (dy / (height * .58)) ** 2;
   const edgeX = u / (.54 + u);
   const edgeY = v / (.88 + v);
-  const scale = 1 / (1 + (narrow ? .048 : .11 + .13 * wide) * edgeX + (narrow ? .014 : .026) * edgeY);
-  // Columns stay quiet near the optical axis. Away from it, both ends of a
-  // column move outward, so the middle of each side visibly wraps inward.
-  const crossBend = narrow ? .07 + .035 * edgeX : .15 + .16 * wide + (.10 + .13 * wide) * edgeX;
-  const horizontal = dx * scale * (1 + crossBend * edgeY);
-  const side = (2 * horizontal / width) ** 2;
-  // Ease out towards the corners so the side bow cannot magnify the last tiles.
-  const edge = narrow ? Math.min(1.8, side) : 1.48 * side / (.55 + side);
-  const fromSeam = y - view.y * stepY;
+  const scale = 1 / (1 + .048 * edgeX + .014 * edgeY);
+  const horizontal = dx * scale * (1 + (.07 + .035 * edgeX) * edgeY);
+  const edge = Math.min(1.8, (2 * horizontal / width) ** 2);
   const bend = fromSeam / (1 + .30 * (fromSeam / stepY) ** 2);
-  const bow = bend * zoom * edge * (narrow ? .075 : .239 + .11 * wide);
-  // Keep the lens centered on the viewport as the repeated plane moves beneath it.
-  return {
-    x: width * .5 + horizontal,
-    y: height * (narrow ? .5 : .49) + dy + bow,
-    scale,
-  };
+  return { x: width * .5 + horizontal, y: height * .5 + dy + bend * zoom * edge * .075, scale };
 }
 
 function contains(outline, x, y) {

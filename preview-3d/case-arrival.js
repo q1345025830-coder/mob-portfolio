@@ -1,105 +1,101 @@
 (() => {
   const root = document.documentElement;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-  if (reduced.matches || performance.getEntriesByType('navigation')[0]?.type !== 'navigate') return;
-
-  const locationKey = location.pathname + location.search + location.hash;
-  const returnPath = new URL('index.html', document.currentScript.src).pathname;
-  const from = document.referrer ? new URL(document.referrer) : null;
+  const key = location.pathname + location.search + location.hash;
   let intent;
   try {
-    intent = JSON.parse(sessionStorage.getItem('mobCaseArrival'));
-    sessionStorage.removeItem('mobCaseArrival');
-  } catch {
-    if (from?.origin === location.origin && from.pathname === returnPath) {
-      intent = { destination: locationKey, sentAt: Date.now() };
+    const record = JSON.parse(sessionStorage.getItem('mobCaseArrival'));
+    if (record?.destination === key) {
+      sessionStorage.removeItem('mobCaseArrival');
+      if (!reduced.matches && performance.getEntriesByType('navigation')[0]?.type === 'navigate'
+        && Date.now() - record.sentAt < 45000) intent = record;
     }
-  }
-  if (intent?.destination !== locationKey || Date.now() - intent.sentAt > 45000) return;
-  root.dataset.mobArrival = 'holding';
-  if (intent.color && CSS.supports('color', intent.color)) root.style.setProperty('--mob-handoff', intent.color);
+  } catch { /* The canonical page also works without stored handoff state. */ }
 
-  let started = false;
-  let bridge;
-  function showBridge() {
-    if (!intent.title || !document.body || bridge) return;
-    bridge = document.createElement('div');
-    bridge.className = 'mob-arrival-bridge';
-    bridge.setAttribute('aria-hidden', 'true');
-    const title = document.createElement('span');
-    title.className = 'mob-handoff-title';
-    title.textContent = intent.title;
-    bridge.append(title);
-    document.body.prepend(bridge);
+  let optIn, transition, firstReveal = false, ready = false, opened = false;
+  if (intent) {
+    root.dataset.mobArrival = 'holding';
+    if ('PageRevealEvent' in window) {
+      optIn = document.createElement('style');
+      optIn.textContent = '@view-transition { navigation: auto; types: mob-entry; }';
+      document.head.append(optIn);
+    }
+    if (intent.color && CSS.supports('color', intent.color)) root.style.setProperty('--mob-handoff', intent.color);
   }
 
-  function releaseHero(hero) {
-    const image = hero.querySelector('img');
-    if (!image) return;
-    hero.dataset.mobHero = 'waiting';
-    const reveal = () => { hero.dataset.mobHero = 'ready'; };
-    const decode = () => image.decode().then(reveal, reveal);
-    if (image.complete) {
-      if (image.naturalWidth) decode();
-      else if (image.currentSrc) reveal();
-    }
-    image.addEventListener('load', decode, { once: true });
-    image.addEventListener('error', reveal, { once: true });
-  }
-
-  function start(final = false) {
-    if (started) return;
-    showBridge();
-    const heading = document.querySelector('main h1');
-    const hero = document.querySelector('main :is(.opening-view, .hero-figure, .case-screen, article > figure:first-of-type)');
-    if (!final && (!heading || !hero?.querySelector('img'))) return;
-    started = true;
-    observer.disconnect();
-    if (!heading || reduced.matches) {
-      delete root.dataset.mobArrival;
-      bridge?.remove();
-      return;
-    }
-
-    // This entry owns the handoff. Avoid a second, browser-managed transition on return.
-    const optOut = document.createElement('style');
-    optOut.textContent = '@view-transition { navigation: none; }';
-    document.head.append(optOut);
-
-    const title = heading.closest('[data-arrive="title"]') || heading;
-    const metadata = document.querySelectorAll('main :is([data-arrive="meta"], .detail-head .discipline, .case-headline, .case-heading .facts)');
-    title.dataset.mobPhase = 'title';
-    for (const node of metadata) node.dataset.mobPhase = 'meta';
-    if (hero) {
-      hero.dataset.mobPhase = 'hero';
-      releaseHero(hero);
-    }
-
-    // Some review cases retain the heading below a full opening photograph.
-    const review = hero?.matches('.case-screen') && title.getBoundingClientRect().top >= innerHeight;
-    const release = () => {
-      if (root.dataset.mobArrival !== 'holding') return;
-      root.dataset.mobArrival = 'playing';
-      if (bridge) {
-        bridge.classList.add(review ? 'is-review' : 'is-clearing');
-        if (review) setTimeout(() => bridge.classList.add('is-clearing'), 330);
-        setTimeout(() => bridge.remove(), review ? 700 : 420);
-      }
+  function upgradeHero() {
+    const hero = document.querySelector('img[data-entry-srcset]');
+    if (!hero) return;
+    const width = hero.clientWidth || innerWidth;
+    if (width * devicePixelRatio <= 896) return;
+    const upgrade = () => {
+      const next = new Image();
+      next.fetchPriority = 'low';
+      next.sizes = hero.dataset.entrySizes;
+      next.srcset = hero.dataset.entrySrcset;
+      next.src = hero.dataset.entrySrc;
+      next.decode().then(() => {
+        hero.sizes = next.sizes;
+        hero.srcset = next.srcset;
+        hero.src = hero.dataset.entrySrc;
+      }, () => {});
     };
-    const deadline = setTimeout(release, 240);
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      clearTimeout(deadline);
-      release();
-    }));
+    // Keep the light rendition on screen while the responsive image is decoded.
+    if (hero.complete && hero.naturalWidth) upgrade();
+    else {
+      hero.addEventListener('load', upgrade, { once: true });
+      hero.addEventListener('error', upgrade, { once: true });
+    }
   }
 
-  const observer = new MutationObserver(() => start());
+  function finish() {
+    if (!ready || opened) return;
+    opened = true;
+    if (intent) {
+      root.dataset.mobArrival = 'shown';
+      if (optIn) {
+        optIn.textContent = '@view-transition { navigation: none; }';
+        document.head.append(optIn);
+      }
+    }
+    upgradeHero();
+  }
+
+  function reveal() {
+    if (ready) return;
+    if (intent && (!document.querySelector('main h1') ||
+      (root.hasAttribute('data-entry-intro') && !document.querySelector('[data-case-entry-intro]')))) return;
+    if (!document.body || (root.hasAttribute('data-entry-intro') && !document.querySelector('img[data-entry-srcset]'))) return;
+    ready = true;
+    observer.disconnect();
+    if (optIn && !firstReveal) return;
+    if (transition) transition.finished.then(finish, finish);
+    else requestAnimationFrame(() => requestAnimationFrame(finish));
+  }
+
+  addEventListener('pagereveal', event => {
+    firstReveal = true;
+    transition = intent ? event.viewTransition : null;
+    if (transition) {
+      transition.types?.add('mob-entry');
+      transition.ready.catch(() => {});
+      transition.finished.then(finish, finish);
+    } else requestAnimationFrame(() => requestAnimationFrame(finish));
+  }, { once: true });
+
+  const observer = new MutationObserver(reveal);
   observer.observe(root, { childList: true, subtree: true });
-  addEventListener('DOMContentLoaded', () => start(true), { once: true });
-  const clear = () => {
-    delete root.dataset.mobArrival;
-    bridge?.remove();
-  };
-  reduced.addEventListener('change', () => { if (reduced.matches) clear(); });
-  addEventListener('pageshow', event => { if (event.persisted) clear(); });
+  addEventListener('DOMContentLoaded', reveal, { once: true });
+  setTimeout(() => {
+    if (opened) return;
+    observer.disconnect();
+    ready = true;
+    finish();
+  }, 2600);
+  addEventListener('pageshow', event => {
+    if (event.persisted && intent) root.dataset.mobArrival = 'shown';
+  });
+  reduced.addEventListener('change', () => {
+    if (reduced.matches && intent) root.dataset.mobArrival = 'shown';
+  });
 })();

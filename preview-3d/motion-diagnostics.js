@@ -113,18 +113,13 @@
         state.entry = '已测到色层上推';
         record('色层上推');
       }
-      if (curtain?.classList.contains('is-covered')) {
-        record('色层盖满');
-        const title = curtain.querySelector('.mob-handoff-title');
-        if (title && Number(win.getComputedStyle(title).opacity) > .15) record('色层上的项目名可见');
-      }
       if (seen.has('详情文档') && stage.classList.contains('is-ready') && !seen.has('已返回网格')) {
         record('已返回网格', { project: doc.activeElement?.dataset.project || null });
       }
     } else if (doc.querySelector('main h1')) {
       record('详情文档', { path: sameOriginPath(doc.URL) });
       state.entry = seen.has('色层上推') ? '已测到上推与详情打开' : motion.matches ? '按系统设置直达' : '详情已打开 · 未测到色层';
-      if (doc.documentElement.dataset.mobArrival === 'playing') record('详情标题入场');
+      if (doc.documentElement.dataset.mobArrival === 'shown') record('详情标题入场');
       const hero = doc.querySelector('.hero-figure img, .opening-view img, .case-screen img');
       if (hero?.complete && hero.naturalWidth) record('详情首图已加载');
     }
