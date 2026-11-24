@@ -1,8 +1,8 @@
 {
-  "version": "2026-11-24.2",
-  "productionBaseline": "f6e386a437e3d4e8154ed3af85ffd7fdd31b30fc",
-  "promotedPreview": "48977f1d71e0fffee5653d57aa1f8336e62f014c",
+  "version": "2026-11-24.3",
+  "productionBaseline": "a7a4fa8fc8f96fd20134f042aa8321e9f21c2b91",
   "projects": 23,
   "originals": 195,
-  "references": 25
+  "references": 25,
+  "motionBuild": "1124-7"
 }

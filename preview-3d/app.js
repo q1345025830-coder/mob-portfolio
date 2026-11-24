@@ -1,6 +1,7 @@
-import { clamp, createScene, layoutFor, requestCover, viewForTile } from './surface.js?v=1124-5';
+import { clamp, createScene, layoutFor, requestCover, viewForTile } from './surface.js?v=1124-7';
 
 const stage = document.querySelector('.stage');
+stage.dataset.renderer = 'starting';
 const links = [...stage.querySelectorAll('.project')];
 const projectIds = links.map(link => link.dataset.project);
 const work = document.querySelector('#work');
@@ -16,6 +17,7 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const stateKey = 'mobPreviewGrid';
 const view = { x: 0, y: 0, pull: 0, driftX: 0, driftY: 0 };
 const velocity = { x: 0, y: 0 };
+const releaseWindow = 135;
 const smoothing = (rate, seconds) => 1 - Math.exp(-rate * seconds);
 let layout = layoutFor(innerWidth, innerHeight, projectIds);
 let preferredKey;
@@ -23,6 +25,11 @@ let scene, press, mouse, hovered, returned, leaving;
 let ready = false, gridStarted = false, suppressClick = false, restoring = false;
 let frame = 0, lastFrame = 0, exitTimer = 0;
 let exitCurtain;
+
+if (new URLSearchParams(location.search).has('diagnose')) {
+  stage.mobMotionSample = () => ({ ...view, hovering: hovered?.dataset.project || null,
+    dragging: Boolean(press?.dragging), gliding: Math.hypot(velocity.x, velocity.y) > .01 });
+}
 let section = 'work', workView = 'grid';
 const scrollOffsets = { grid: 0, list: 0, resume: 0 };
 const visibleMode = () => section === 'resume' ? 'resume' : workView;
@@ -188,7 +195,12 @@ function tick(now) {
   const hover = !press && !leaving && mouse ? linkAt(mouse.x, mouse.y) : null;
   const focused = document.activeElement?.matches('.project:focus-visible') ? document.activeElement : null;
   highlight(leaving || hover || focused || returned || null);
-  scene?.draw(layout, view, press ? null : hovered, hover === hovered && mouse ? relativePoint(mouse.x,mouse.y) : null, preferredKey);
+  try {
+    scene?.draw(layout, view, press ? null : hovered, hover === hovered && mouse ? relativePoint(mouse.x,mouse.y) : null, preferredKey);
+  } catch (error) {
+    fallback('webgl-render-error', error);
+    return;
+  }
   // A stationary pointer can be crossed by a moving card even after the last animation step.
   if (moving || (mouse && !press && !leaving && hover !== linkAt(mouse.x, mouse.y))) redraw();
   else lastFrame = 0;
@@ -209,7 +221,10 @@ function refreshLayout() {
   redraw();
 }
 
-function fallback() {
+function fallback(reason = stage.dataset.renderReason || 'webgl-unavailable', error) {
+  stage.dataset.renderer = 'flat';
+  stage.dataset.renderReason = reason;
+  if (error) console.warn('MOB grid fell back to flat mode', error);
   ready = false;
   cancelAnimationFrame(frame);
   frame = lastFrame = 0;
@@ -218,7 +233,8 @@ function fallback() {
   highlight(null);
   stage.classList.remove('is-ready', 'is-dragging');
   document.body.classList.remove('is-spatial');
-  scene?.destroy();
+  try { scene?.destroy(); } catch (error) { console.warn('MOB WebGL cleanup', error); }
+  stage.querySelector('canvas.scene')?.remove();
   scene = null;
   for (const link of links) {
     requestCover(link.querySelector('.artwork img'), '(max-width: 680px) calc(100vw - 64px), min(45vw, 510px)', 'auto', 'lazy');
@@ -274,7 +290,9 @@ function restoreEntry(resetOnReload = false) {
 }
 
 function sample(event) {
-  return { x: event.clientX, y: event.clientY, time: performance.now() };
+  const now = performance.now();
+  const time = event.timeStamp > 0 && event.timeStamp <= now + 1 ? event.timeStamp : now;
+  return { x: event.clientX, y: event.clientY, time };
 }
 
 stage.addEventListener('pointerdown', event => {
@@ -307,7 +325,7 @@ window.addEventListener('pointermove', event => {
     }
     press.samples.push(point);
     // Keep the last point just outside the velocity window for interpolation at its edge.
-    while (press.samples.length > 2 && point.time - press.samples[1].time > 105) press.samples.shift();
+    while (press.samples.length > 2 && point.time - press.samples[1].time > releaseWindow) press.samples.shift();
   }
   redraw();
 });
@@ -332,8 +350,16 @@ function endPress(event, release) {
       const end = sample(event);
       // Holding still before release cancels the launch even after a fast earlier move.
       const last = drag.samples.at(-1);
-      if (end.time - last.time <= 105) {
-        const first = drag.samples.find(point => end.time - point.time <= 105) || last;
+      if (end.time - last.time <= releaseWindow) {
+        const cutoff = end.time - releaseWindow;
+        const index = drag.samples.findIndex(point => point.time >= cutoff);
+        let first = drag.samples[Math.max(0, index)];
+        if (index > 0) {
+          const older = drag.samples[index - 1];
+          const fraction = (cutoff - older.time) / Math.max(1, first.time - older.time);
+          first = { time: cutoff, x: older.x + (first.x - older.x) * fraction,
+            y: older.y + (first.y - older.y) * fraction };
+        }
         const seconds = Math.max(.025, (end.time - first.time) / 1000);
         velocity.x = clamp((first.x - end.x) / layout.stepX / seconds, -4, 4);
         velocity.y = clamp((first.y - end.y) / layout.stepY / seconds, -4, 4);
@@ -345,7 +371,7 @@ function endPress(event, release) {
 
 window.addEventListener('pointerup', event => {
   const tap = event.pointerType === 'touch' && press?.id === event.pointerId
-    && !press.dragging && !suppressClick && !leaving && performance.now() - press.start.time < 500;
+    && !press.dragging && !suppressClick && !leaving && sample(event).time - press.start.time < 500;
   const link = tap ? linkAt(event.clientX, event.clientY) : null;
   const startedOnLink = link && linkAt(press.start.x, press.start.y) === link;
   endPress(event, true);
@@ -518,8 +544,14 @@ window.addEventListener('pagehide', () => saveEntry(history.state?.[stateKey]?.p
 
 function startGrid() {
   gridStarted = true;
-  scene = createScene(stage, links, { onRedraw: redraw, onFallback: fallback });
+  try {
+    scene = createScene(stage, links, { onRedraw: redraw, onFallback: fallback });
+  } catch (error) {
+    fallback('webgl-start-error', error);
+    return;
+  }
   if (scene) {
+    stage.dataset.renderer = 'webgl';
     ready = true;
     stage.classList.add('is-ready');
   } else {
@@ -527,4 +559,5 @@ function startGrid() {
   }
 }
 restoreEntry(performance.getEntriesByType('navigation')[0]?.type === 'reload');
-new ResizeObserver(refreshLayout).observe(stage);
+if ('ResizeObserver' in window) new ResizeObserver(refreshLayout).observe(stage);
+else window.addEventListener('resize', refreshLayout);

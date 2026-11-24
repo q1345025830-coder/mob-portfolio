@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>MOB · 动效诊断</title>
+<link rel="stylesheet" href="motion-diagnostics.css">
+<script defer src="motion-diagnostics.js"></script>
+</head>
+<body>
+<header>
+  <h1>MOB 动效诊断</h1>
+  <p>在下方作品网格里轻移鼠标、悬停、斜拖松手，再点任一作品并后退。完成后复制结果。</p>
+  <div class="actions">
+    <button type="button" id="copy">复制结果</button>
+    <button type="button" id="reset">重测</button>
+    <a href="https://www.phantom.land/" target="_blank" rel="noopener noreferrer">打开 Phantom</a>
+    <a href="index.html" target="_blank" rel="noopener">打开 MOB 正式作品页</a>
+    <span id="status" role="status"></span>
+  </div>
+  <dl id="checks">
+    <div><dt>发布与脚本</dt><dd id="build">检测中</dd></div>
+    <div><dt>图形模式</dt><dd id="renderer">等待网格</dd></div>
+    <div><dt>减少动态效果</dt><dd id="motion">检测中</dd></div>
+    <div><dt>鼠标跟随</dt><dd id="follow">待操作</dd></div>
+    <div><dt>拖动与松手</dt><dd id="drag">待操作</dd></div>
+    <div><dt>单格悬停</dt><dd id="hover">待操作</dd></div>
+    <div><dt>详情进场</dt><dd id="entry">待操作</dd></div>
+  </dl>
+</header>
+<main>
+  <iframe id="work" title="MOB 作品空间诊断窗口" src="index.html?diagnose=1"></iframe>
+</main>
+<details>
+  <summary>查看并手动复制诊断文本</summary>
+  <p>结果保留在当前页面。按「复制结果」后可以手动转发。</p>
+  <textarea id="log" aria-label="诊断结果" readonly spellcheck="false"></textarea>
+</details>
+</body>
+</html>

@@ -121,12 +121,14 @@ export function project(x, y, layout, view) {
   const scale = 1 / (1 + (narrow ? .048 : .11 + .13 * wide) * edgeX + (narrow ? .014 : .026) * edgeY);
   // Columns stay quiet near the optical axis. Away from it, both ends of a
   // column move outward, so the middle of each side visibly wraps inward.
-  const crossBend = narrow ? .07 + .035 * edgeX : .16 + .23 * wide + (.24 + .36 * wide) * edgeX;
+  const crossBend = narrow ? .07 + .035 * edgeX : .15 + .16 * wide + (.10 + .13 * wide) * edgeX;
   const horizontal = dx * scale * (1 + crossBend * edgeY);
-  const edge = Math.min(1.8, (2 * horizontal / width) ** 2);
+  const side = (2 * horizontal / width) ** 2;
+  // Ease out towards the corners so the side bow cannot magnify the last tiles.
+  const edge = narrow ? Math.min(1.8, side) : 1.48 * side / (.55 + side);
   const fromSeam = y - view.y * stepY;
   const bend = fromSeam / (1 + .30 * (fromSeam / stepY) ** 2);
-  const bow = bend * zoom * edge * (narrow ? .075 : .24 + .12 * wide);
+  const bow = bend * zoom * edge * (narrow ? .075 : .239 + .11 * wide);
   // Keep the lens centered on the viewport as the repeated plane moves beneath it.
   return {
     x: width * .5 + horizontal,
@@ -268,18 +270,23 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
   const canvas = document.createElement('canvas');
   canvas.className = 'scene';
   canvas.setAttribute('aria-hidden', 'true');
-  let gl;
-  try {
-    gl = canvas.getContext('webgl', { alpha: true, antialias: true, depth: false });
-  } catch {
+  function unavailable(reason) {
+    stage.dataset.renderReason = reason;
     return null;
   }
-  if (!gl) return null;
+  let gl;
+  const attributes = { alpha: true, antialias: true, depth: false };
+  try {
+    gl = canvas.getContext('webgl', attributes) || canvas.getContext('experimental-webgl', attributes);
+  } catch {
+    return unavailable('webgl-context-error');
+  }
+  if (!gl) return unavailable('webgl-unavailable');
   const release = gl.getExtension('WEBGL_lose_context');
   const program = shaderProgram(gl);
   if (!program) {
     release?.loseContext();
-    return null;
+    return unavailable('webgl-shader');
   }
   const events = new AbortController();
   const { signal } = events;
@@ -373,7 +380,7 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
       return true;
     } catch {
-      onFallback();
+      onFallback('texture-upload');
       return false;
     }
   }
@@ -396,6 +403,8 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
     const swatch = document.createElement('canvas');
     swatch.width = swatch.height = 3;
     const painter = swatch.getContext('2d');
+    card.loaded = true;
+    if (!painter) { onRedraw(); return; }
     painter.drawImage(card.picture, 0, 0, 3, 3);
     const field = painter.getImageData(0, 0, 3, 3);
     for (let i = 0; i < field.data.length; i += 4) {
@@ -413,12 +422,11 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
     card.field ??= textureFor(gl);
     gl.bindTexture(gl.TEXTURE_2D, card.field);
     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,swatch);
-    card.loaded = true;
     onRedraw();
   };
   canvas.addEventListener('webglcontextlost', event => {
     event.preventDefault();
-    onFallback();
+    onFallback('webgl-context-lost');
   }, { signal });
   for (const card of cards) {
     card.picture.addEventListener('load', () => upload(card), { signal });
