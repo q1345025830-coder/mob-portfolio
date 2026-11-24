@@ -24,7 +24,7 @@ let preferredKey;
 let scene, press, mouse, hovered, returned, leaving;
 let ready = false, gridStarted = false, suppressClick = false, restoring = false;
 let frame = 0, lastFrame = 0;
-let exitCurtain, exitViewTransition;
+let exitCurtain;
 let preparedCase, previewTimer;
 
 if (new URLSearchParams(location.search).has('diagnose')) {
@@ -253,8 +253,6 @@ function restoreEntry(resetOnReload = false) {
   delete document.body.dataset.caseTheme;
   exitCurtain?.remove();
   exitCurtain = null;
-  exitViewTransition?.remove();
-  exitViewTransition = null;
   stage.classList.remove('is-leaving', 'is-case-leaving', 'is-dragging');
   clearReturned();
   stopGlide();
@@ -519,11 +517,6 @@ function exitToProject(link) {
         }));
       } catch { /* Standard navigation still works with storage disabled. */ }
     }
-    if (!reduced.matches && 'PageSwapEvent' in window) {
-      exitViewTransition = document.createElement('style');
-      exitViewTransition.textContent = '@view-transition { navigation: auto; types: mob-entry; }';
-      document.head.append(exitViewTransition);
-    }
     location.assign(url.href);
   }
 
@@ -565,17 +558,6 @@ reduced.addEventListener('change', () => {
 });
 window.addEventListener('pageshow', event => {
   if (event.persisted) restoreEntry();
-});
-window.addEventListener('pageswap', event => {
-  const transition = event.viewTransition;
-  if (!transition) return;
-  transition.ready.catch(() => {});
-  transition.finished.catch(() => {});
-  if (leaving && exitViewTransition) transition.types?.add('mob-entry');
-});
-window.addEventListener('pagereveal', event => {
-  event.viewTransition?.ready.catch(() => {});
-  event.viewTransition?.finished.catch(() => {});
 });
 window.addEventListener('pagehide', () => saveEntry(history.state?.[stateKey]?.projectId));
 

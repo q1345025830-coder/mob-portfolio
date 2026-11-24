@@ -12,14 +12,13 @@
     }
   } catch { /* The canonical page also works without stored handoff state. */ }
 
-  let optIn, transition, firstReveal = false, ready = false, opened = false;
+  let opened = false;
+  let optOut;
   if (intent) {
     root.dataset.mobArrival = 'holding';
-    if ('PageRevealEvent' in window) {
-      optIn = document.createElement('style');
-      optIn.textContent = '@view-transition { navigation: auto; types: mob-entry; }';
-      document.head.append(optIn);
-    }
+    optOut = document.createElement('style');
+    optOut.textContent = '@view-transition { navigation: none; }';
+    document.head.append(optOut);
     if (intent.color && CSS.supports('color', intent.color)) root.style.setProperty('--mob-handoff', intent.color);
   }
 
@@ -48,40 +47,31 @@
     }
   }
 
-  function finish() {
-    if (!ready || opened) return;
-    opened = true;
+  function show() {
     if (intent) {
+      document.head.append(optOut);
       root.dataset.mobArrival = 'shown';
-      if (optIn) {
-        optIn.textContent = '@view-transition { navigation: none; }';
-        document.head.append(optIn);
-      }
     }
     upgradeHero();
   }
 
   function reveal() {
-    if (ready) return;
-    if (intent && (!document.querySelector('main h1') ||
-      (root.hasAttribute('data-entry-intro') && !document.querySelector('[data-case-entry-intro]')))) return;
-    if (!document.body || (root.hasAttribute('data-entry-intro') && !document.querySelector('img[data-entry-srcset]'))) return;
-    ready = true;
+    if (opened || !document.body) return;
+    if (intent && !document.querySelector('main h1')) return;
+    if (root.hasAttribute('data-entry-intro') && (!document.querySelector('[data-case-entry-intro]') || !document.querySelector('img[data-entry-srcset]'))) return;
+    opened = true;
     observer.disconnect();
-    if (optIn && !firstReveal) return;
-    if (transition) transition.finished.then(finish, finish);
-    else requestAnimationFrame(() => requestAnimationFrame(finish));
+    requestAnimationFrame(() => requestAnimationFrame(show));
   }
 
-  addEventListener('pagereveal', event => {
-    firstReveal = true;
-    transition = intent ? event.viewTransition : null;
-    if (transition) {
-      transition.types?.add('mob-entry');
-      transition.ready.catch(() => {});
-      transition.finished.then(finish, finish);
-    } else requestAnimationFrame(() => requestAnimationFrame(finish));
-  }, { once: true });
+  addEventListener('pageswap', event => {
+    const outgoing = event.viewTransition;
+    if (!outgoing) return;
+    outgoing.ready.catch(() => {});
+    outgoing.finished.catch(() => {});
+    outgoing.updateCallbackDone.catch(() => {});
+    if (intent) outgoing.skipTransition();
+  });
 
   const observer = new MutationObserver(reveal);
   observer.observe(root, { childList: true, subtree: true });
@@ -89,8 +79,8 @@
   setTimeout(() => {
     if (opened) return;
     observer.disconnect();
-    ready = true;
-    finish();
+    opened = true;
+    show();
   }, 2600);
   addEventListener('pageshow', event => {
     if (event.persisted && intent) root.dataset.mobArrival = 'shown';

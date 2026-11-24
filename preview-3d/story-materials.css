@@ -143,14 +143,3 @@ html[data-mob-project]:not([data-mob-project=""]) .topbar { background: linear-g
   from { opacity: 1; visibility: visible; }
   to { opacity: 0; visibility: hidden; }
 }
-
-html:active-view-transition-type(mob-entry)::view-transition-group(root) { animation-duration: 195ms; }
-html:active-view-transition-type(mob-entry)::view-transition-old(root) { animation: none; mix-blend-mode: normal; }
-html:active-view-transition-type(mob-entry)::view-transition-new(root) {
-  animation: mob-entry-wipe 195ms cubic-bezier(.25,.55,.24,1) both;
-  mix-blend-mode: normal;
-}
-@keyframes mob-entry-wipe {
-  from { clip-path: inset(76% 0 0); }
-  to { clip-path: inset(0); }
-}
