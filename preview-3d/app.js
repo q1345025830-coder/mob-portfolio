@@ -1,4 +1,4 @@
-import { clamp, createScene, layoutFor, requestCover, viewForTile } from './surface.js';
+import { clamp, createScene, layoutFor, requestCover, viewForTile } from './surface.js?v=1124-5';
 
 const stage = document.querySelector('.stage');
 const links = [...stage.querySelectorAll('.project')];
@@ -22,6 +22,7 @@ let preferredKey;
 let scene, press, mouse, hovered, returned, leaving;
 let ready = false, gridStarted = false, suppressClick = false, restoring = false;
 let frame = 0, lastFrame = 0, exitTimer = 0;
+let exitCurtain;
 let section = 'work', workView = 'grid';
 const scrollOffsets = { grid: 0, list: 0, resume: 0 };
 const visibleMode = () => section === 'resume' ? 'resume' : workView;
@@ -220,7 +221,7 @@ function fallback() {
   scene?.destroy();
   scene = null;
   for (const link of links) {
-    requestCover(link.querySelector('img'), '(max-width: 680px) calc(100vw - 64px), min(45vw, 510px)', 'auto', 'lazy');
+    requestCover(link.querySelector('.artwork img'), '(max-width: 680px) calc(100vw - 64px), min(45vw, 510px)', 'auto', 'lazy');
   }
 }
 
@@ -233,6 +234,8 @@ function restoreEntry(resetOnReload = false) {
   clearTimeout(exitTimer);
   leaving = null;
   delete document.body.dataset.caseTheme;
+  exitCurtain?.remove();
+  exitCurtain = null;
   stage.classList.remove('is-leaving', 'is-case-leaving', 'is-dragging');
   clearReturned();
   stopGlide();
@@ -407,8 +410,10 @@ stage.addEventListener('click', event => {
     preferredKey=scene.cellAt(point.x,point.y);
   }
   saveEntry(link.dataset.project);
-  if (!ready) return;
-  if (reduced.matches) { event.preventDefault(); location.assign(link.href); return; }
+  if (reduced.matches) {
+    if (ready) { event.preventDefault(); location.assign(link.href); }
+    return;
+  }
   event.preventDefault();
   exitToProject(link);
 });
@@ -418,13 +423,65 @@ function exitToProject(link) {
   stopGlide();
   const { caseTheme } = link.dataset;
   const entersCase = Boolean(caseTheme) || link.hasAttribute('data-case-transition');
-  if (caseTheme) document.body.dataset.caseTheme = caseTheme;
-  if (gridVisible()) {
-    stage.classList.add('is-leaving');
-    stage.classList.toggle('is-case-leaving', entersCase);
-    redraw();
+  if (!entersCase) {
+    exitTimer = setTimeout(() => location.assign(link.href), 175);
+    return;
   }
-  exitTimer = setTimeout(() => location.assign(link.href), entersCase ? 190 : 175);
+  if (caseTheme) document.body.dataset.caseTheme = caseTheme;
+  if (gridVisible()) stage.classList.add('is-case-leaving');
+  const curtain = document.createElement('div');
+  curtain.className = 'mob-entry-curtain';
+  curtain.setAttribute('aria-hidden', 'true');
+  const title = links.find(card => card.dataset.project === link.dataset.project)?.querySelector('.project-meta.name')?.textContent.trim();
+  if (title) {
+    const heading = document.createElement('span');
+    heading.className = 'mob-handoff-title';
+    heading.textContent = title;
+    curtain.append(heading);
+  }
+  const url = new URL(link.href);
+  const prefetch = document.createElement('link');
+  prefetch.rel = 'prefetch';
+  prefetch.href = url.href;
+  document.head.append(prefetch);
+  document.body.append(curtain);
+  exitCurtain = curtain;
+
+  let sent = false;
+  function navigate() {
+    if (sent || leaving !== link) return;
+    sent = true;
+    clearTimeout(exitTimer);
+    if (!reduced.matches) {
+      try {
+        sessionStorage.setItem('mobCaseArrival', JSON.stringify({
+          destination: url.pathname + url.search + url.hash,
+          color: getComputedStyle(curtain).backgroundColor,
+          title,
+          sentAt: Date.now(),
+        }));
+      } catch { /* The destination can still use its normal direct entry. */ }
+    }
+    location.assign(url.href);
+  }
+  function covered() {
+    if (sent || leaving !== link) return;
+    curtain.classList.add('is-covered');
+    // Give the browser a paint opportunity at full coverage before it begins navigation.
+    requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(navigate)));
+  }
+  curtain.addEventListener('animationend', covered, { once: true });
+  curtain.addEventListener('animationcancel', covered, { once: true });
+  requestAnimationFrame(() => {
+    if (leaving === link) curtain.classList.add('is-rising');
+  });
+  exitTimer = setTimeout(() => {
+    if (document.hidden || reduced.matches) navigate();
+    else {
+      covered();
+      exitTimer = setTimeout(navigate, 180);
+    }
+  }, 740);
 }
 
 reset.addEventListener('click', () => {

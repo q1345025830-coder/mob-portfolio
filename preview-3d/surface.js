@@ -32,6 +32,7 @@ export function layoutFor(width, height, projectIds) {
   const narrow = width <= 680;
   const stepX = narrow ? Math.max(1, width * .51) : clamp(width * .248, 242, 555);
   const stepY = narrow ? Math.max(height * .365, 162) : clamp(height * .365, 217, 410);
+  const wide = narrow ? 0 : clamp((width / height - 1.36) / .6, 0, 1);
   const columns = Math.min(gridColumns, projectIds.length);
   const rows = Math.ceil(projectIds.length / columns);
   // Fill the short last row with existing projects so both edges tile continuously.
@@ -39,7 +40,7 @@ export function layoutFor(width, height, projectIds) {
     projectIds[i] ?? projectIds[(i * 7) % projectIds.length]);
   const rowEdges = Array.from({length: rows+1}, (_, i) => narrow || i <= 1 ? i - 1 : i - .75);
   const periodY = rowEdges.at(-1) - rowEdges[0];
-  return {width,height,narrow,stepX,stepY,columns,rows,slots,rowEdges,periodY,
+  return {width,height,narrow,wide,stepX,stepY,columns,rows,slots,rowEdges,periodY,
     homeX:narrow ? .5 : (columns-1)/2,homeY:narrow ? 1 : 0};
 }
 
@@ -80,7 +81,7 @@ function tileContent(tile, aspect, narrow) {
   const { cell } = tile;
   const insetX = narrow ? 7 : 15;
   const insetY = narrow ? 7 : 11;
-  const upperHeight = narrow ? 38 : 36;
+  const upperHeight = narrow ? 40 : 38;
   const lowerHeight = narrow ? 22 : 29;
   const gap = narrow ? 4 : 8;
   const bounds = {
@@ -95,7 +96,7 @@ function tileContent(tile, aspect, narrow) {
   const left = clamp(tile.x - width / 2, bounds.left, bounds.right - width);
   const top = clamp(tile.y - height / 2, artTop, artBottom - height);
   const art = { left, right: left + width, top, bottom: top + height };
-  const split = bounds.left + widthInside * .40;
+  const split = bounds.left + widthInside * .32;
   const upper = { top: bounds.top, bottom: bounds.top + upperHeight };
   const lower = { top: bounds.bottom - lowerHeight, bottom: bounds.bottom };
   const corners = [
@@ -108,19 +109,24 @@ function tileContent(tile, aspect, narrow) {
 }
 
 
-function project(x, y, layout, view) {
-  const { width, height, narrow, stepX, stepY } = layout;
+export function project(x, y, layout, view) {
+  const { width, height, narrow, wide, stepX, stepY } = layout;
   const zoom = 1 / (1 + view.pull * (narrow ? .045 : .145));
   const dx = (x - view.x * stepX + view.driftX) * zoom;
   const dy = (y - view.y * stepY + view.driftY) * zoom;
   const u = (dx / (width * .54)) ** 2;
-  const v = (dy / (height * .68)) ** 2;
-  const scale = 1 / (1 + (narrow ? .070 : .168) * u / (1 + .63 * u) + (narrow ? .020 : .044) * v / (1 + .40 * v));
-  const horizontal = dx * scale;
-  const edge = Math.min(1.65, (2 * horizontal / width) ** 2);
+  const v = (dy / (height * .58)) ** 2;
+  const edgeX = u / (.54 + u);
+  const edgeY = v / (.88 + v);
+  const scale = 1 / (1 + (narrow ? .048 : .11 + .13 * wide) * edgeX + (narrow ? .014 : .026) * edgeY);
+  // Columns stay quiet near the optical axis. Away from it, both ends of a
+  // column move outward, so the middle of each side visibly wraps inward.
+  const crossBend = narrow ? .07 + .035 * edgeX : .16 + .23 * wide + (.24 + .36 * wide) * edgeX;
+  const horizontal = dx * scale * (1 + crossBend * edgeY);
+  const edge = Math.min(1.8, (2 * horizontal / width) ** 2);
   const fromSeam = y - view.y * stepY;
-  const bend = fromSeam / (1 + .32 * (fromSeam / stepY) ** 2);
-  const bow = bend * zoom * edge * (narrow ? .055 : .192);
+  const bend = fromSeam / (1 + .30 * (fromSeam / stepY) ** 2);
+  const bow = bend * zoom * edge * (narrow ? .075 : .24 + .12 * wide);
   // Keep the lens centered on the viewport as the repeated plane moves beneath it.
   return {
     x: width * .5 + horizontal,
@@ -317,7 +323,7 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
   const line = new Float32Array(guidePoints * 4);
   const cards = links.map(link => ({
     link, id: link.dataset.project,
-    texture: null, picture: link.querySelector('img'),
+    texture: null, picture: link.querySelector('.artwork img'),
     artwork: link.querySelector('.artwork'), labels: [...link.querySelectorAll('.project-meta')],
   }));
   // Embed a small RGB copy of each cover so the first painted frame has imagery.

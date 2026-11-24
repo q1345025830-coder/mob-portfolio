@@ -1,11 +1,8 @@
 {
-  "version": "2026-11-23.9",
-  "productionBaseline": "8bade1c7af666b235e5c9b400023268664ee8a91",
-  "previous": "fe537ac8371accaba8dab95f9c3795055faedb55",
+  "version": "2026-11-24.1",
+  "productionBaseline": "b6289b64e62737dcbe0b0a7c048238478bdb45ea",
+  "promotedPreview": "67c09f5eded7f263e087638731d3a3b33893aad2",
   "projects": 23,
   "originals": 195,
-  "references": 25,
-  "hoverContrast": 1.8,
-  "mobileCoverWidth": 384,
-  "mobileHeroWidth": 896
+  "references": 25
 }
