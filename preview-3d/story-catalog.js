@@ -111,6 +111,7 @@ window.mobResearch = {
     "cadillac-changsha.html": "cadillac-changsha",
     "cadillac-outdoor-exhibition.html": "cadillac-outdoor-exhibition",
     "xt5-phev-chongqing.html": "xt5-phev-chongqing",
-    "cadillac-fengfan-outdoor.html": "cadillac-fengfan-outdoor"
+    "cadillac-fengfan-outdoor.html": "cadillac-fengfan-outdoor",
+    "xt5-phev-chongqing.html": "xt5-phev-chongqing"
   }
 };

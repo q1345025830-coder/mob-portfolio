@@ -62,28 +62,52 @@
 
   function installBrandReturn(id, record) {
     const header = document.querySelector(reviewPage ? '.case-tools' : '.case-header, .site-bar, .header');
-    if (!header) return;
+    if (!header || !id) return;
+    header.classList.add('mob-case-masthead');
+    if (header.matches('.header') && header.parentElement.matches('.shell')) {
+      header.parentElement.classList.add('mob-case-masthead-shell');
+    }
     const old = header.querySelector('[data-brand-return]');
-    if (!id) return;
     if (old?.dataset.brandReturn === id) return;
     const review = window.reviewContent;
     const projects = [...(window.portfolioProjects || []), ...(review?.projects || []), ...(review?.shorts || [])];
-    const brand = record?.brand || projects.find(project => project.id === id)?.brand || 'MOB';
+    const brand = record?.brand || projects.find(project => project.id === id)?.brand || '';
     const match = logos[brand];
     const link = document.createElement('a');
     link.className = 'case-brand-return';
     link.dataset.brandReturn = id;
     link.href = workUrl.href;
-    link.setAttribute('aria-label', brand + (root.lang === 'en' ? ' · Return to work' : ' · 返回作品'));
+    const label = brand ? 'MOB × ' + brand : 'MOB';
+    link.setAttribute('aria-label', label + (root.lang === 'en' ? ' · Return to work' : ' · 返回作品'));
+    const wordmark = document.createElement('span');
+    wordmark.className = 'case-brand-mob';
+    wordmark.textContent = 'MOB';
+    link.append(wordmark);
+    if (brand) {
+      const divider = document.createElement('span');
+      divider.className = 'case-brand-cross';
+      divider.setAttribute('aria-hidden', 'true');
+      divider.textContent = '×';
+      link.append(divider);
+    }
     if (match) {
       const logo = document.createElement('img');
       logo.className = 'case-brand-logo case-brand-logo--' + match[1];
       logo.src = new URL('case-media/' + match[0], moduleRoot).href;
       logo.alt = '';
       link.append(logo);
-    } else link.textContent = brand;
+    } else if (brand) {
+      const brandText = document.createElement('span');
+      brandText.textContent = brand;
+      link.append(brandText);
+    }
     link.addEventListener('click', event => {
       if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      // The grid restores its prior camera and focus on history traversal.
+      const optOut = document.createElement('style');
+      optOut.textContent = '@view-transition { navigation: none; }';
+      document.head.append(optOut);
+      addEventListener('pageshow', () => optOut.remove(), { once: true });
       if (history.state?.mobBrandFromWork || history.state?.mobXt5FromGrid || history.state?.fromMobGrid) {
         event.preventDefault();
         history.back();
@@ -112,6 +136,32 @@
     }
   }
 
+  function revealDecodedFigures(main, id) {
+    if (id === 'xt5-tibet') {
+      const night = main.querySelector('.editorial-story figure[data-image="3"] .parallax-frame');
+      if (night && !night.hasAttribute('data-mob-decode')) {
+        night.dataset.mobDecode = root.lang === 'en' ? 'Loading night view…' : '正在载入夜景…';
+      }
+    }
+    for (const frame of main.querySelectorAll('[data-mob-decode]:not([data-mob-image-state])')) {
+      const image = frame.querySelector('img');
+      if (!image) continue;
+      frame.dataset.mobImageState = 'pending';
+      const loaded = async () => {
+        try {
+          await image.decode();
+          frame.dataset.mobImageState = 'ready';
+        } catch {
+          frame.dataset.mobImageState = 'error';
+        }
+      };
+      image.addEventListener('load', loaded);
+      image.addEventListener('error', () => { frame.dataset.mobImageState = 'error'; });
+      if (image.complete && image.naturalWidth) loaded();
+      else if (image.complete && image.currentSrc) frame.dataset.mobImageState = 'error';
+    }
+  }
+
   function enrich() {
     const id = projectId(), record = catalog.cases[id];
     root.classList.toggle('mob-themed', Boolean(record));
@@ -121,6 +171,7 @@
     if (record) root.style.setProperty('--mob-tone',record.tone);
     const main = document.querySelector('main');
     if (!main) return;
+    revealDecodedFigures(main, id);
     const image = main.querySelector('img');
     if (image) {
       if (!image.classList.contains('mob-loaded')) prepare(image);

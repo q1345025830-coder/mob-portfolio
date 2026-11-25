@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <script data-mob-js="case-arrival.js?entry=1125-3">
+  <script data-mob-js="case-arrival.js?entry=1125-6">
 (() => {
   const root = document.documentElement;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -80,6 +80,12 @@
     observer.disconnect();
     requestAnimationFrame(() => requestAnimationFrame(show));
   }
+
+  addEventListener('pagereveal', event => {
+    event.viewTransition?.ready.catch(() => {});
+    event.viewTransition?.updateCallbackDone.catch(() => {});
+    event.viewTransition?.finished.catch(() => {});
+  });
 
   addEventListener('pageswap', event => {
     const outgoing = event.viewTransition;
@@ -1064,11 +1070,10 @@ html:has(.viewer[open]) { overflow: hidden; }
 </style>
   <script type="module" src="xt5-detail.js"></script>
 
-  <style data-mob-css="story-materials.css?entry=1124-9">
+  <style data-mob-css="story-materials.css?entry=1125-6">
 .clip h2{font-size:clamp(22px,3vw,40px);font-weight:550;letter-spacing:-.035em;margin:0 0 1em}
 html.mob-themed,html.mob-themed body,html.mob-themed .case-paper{background:var(--mob-tone);color:#f4eee5;--bg:var(--mob-tone);--paper:var(--mob-tone);--case-tone:var(--mob-tone)}
 html.mob-themed .case-paper :is(p,h1,h2,h3,figcaption,.eyebrow){color:inherit}
-html.mob-themed :is(.site-bar,.case-header,.header){background:linear-gradient(var(--mob-tone),color-mix(in srgb,var(--mob-tone) 65%,transparent));backdrop-filter:blur(12px)}
 .clip.mob-clip{margin:clamp(28px,5vw,72px) auto;width:100%;padding:0 0 2rem;color:inherit}.mob-clip video{width:100%;height:auto;aspect-ratio:16/9;background:#151414;display:block}.mob-clip a{display:inline-block;padding:12px 0;color:inherit;text-decoration:underline}
 .mob-load{position:fixed;z-index:30;bottom:6vh;left:50%;transform:translateX(-50%);padding:.6em 1em;border-radius:22px;background:#201f20e8;color:white;font:13px sans-serif;pointer-events:none}.mob-retry{display:block;padding:.6em 1em}
 
@@ -1095,7 +1100,6 @@ html[data-mob-project="cadillac-changsha"] {--mob-tone:#2c241e}
 html[data-mob-project="cadillac-outdoor-exhibition"] {--mob-tone:#242922}
 html[data-mob-project="xt5-phev-chongqing"] {--mob-tone:#292520}
 html[data-mob-project] body{background-color:var(--mob-tone)} html[data-mob-project] :is(.hero-figure,.opening-view,.case-screen,article>figure:first-of-type) img:not(.mob-loaded){background:var(--mob-hero, none) center/contain no-repeat}html.mob-themed :is(.case-screen,.case-tools,.case-screen .screen-bar){background-color:var(--mob-tone)}
-html.mob-themed .case-tools{background:linear-gradient(to bottom,color-mix(in srgb,var(--mob-tone) 90%,transparent),color-mix(in srgb,var(--mob-tone) 62%,transparent));backdrop-filter:blur(14px)}
 .editorial-reference-pair {
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
@@ -1156,8 +1160,7 @@ html.mob-themed .case-tools{background:linear-gradient(to bottom,color-mix(in sr
 .case-brand-return:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
 .case-brand-logo { display: block; width: auto; height: 29px; max-width: 92px; object-fit: contain; filter: brightness(0) invert(.96); }
 .case-brand-logo--volvo { width: 83px; height: auto; }
-html[data-mob-project]:not([data-mob-project=""]) :is(.case-header, .site-bar, .topbar) { position: sticky; top: 0; }
-html[data-mob-project]:not([data-mob-project=""]) .topbar { background: linear-gradient(var(--mob-tone, #151419), transparent); backdrop-filter: blur(12px); }
+
 @media (max-width: 680px) {
   .case-brand-logo { height: 23px; }
   .case-brand-logo--volvo { width: 67px; height: auto; }
@@ -1211,9 +1214,71 @@ html[data-mob-project]:not([data-mob-project=""]) .topbar { background: linear-g
   to { opacity: 0; visibility: hidden; }
 }
 
+/* Sticky legacy shells keep their original flow height while the case continues behind them. */
+html[data-mob-project] .mob-case-masthead-shell {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+html[data-mob-project] body .mob-case-masthead {
+  --masthead-inset: env(safe-area-inset-top, 0px);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  isolation: isolate;
+  min-height: calc(49px + var(--masthead-inset));
+  padding-top: var(--masthead-inset);
+  background: transparent;
+  border-bottom: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+html[data-mob-project] body .mob-case-masthead.header {
+  position: relative;
+  top: auto;
+  margin-top: 0;
+}
+html[data-mob-project] body .mob-case-masthead.case-tools {
+  height: calc(62px + var(--masthead-inset));
+  margin-bottom: calc(-62px - var(--masthead-inset));
+}
+html[data-mob-project] body .mob-case-masthead::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: 50%;
+  translate: -50% 0;
+  width: 100vw;
+  height: calc(clamp(76px, 10vh, 110px) + var(--masthead-inset));
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--mob-tone, #151419) 84%, transparent), transparent);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  -webkit-mask-image: linear-gradient(#000 0%, rgba(0,0,0,.75) 43%, transparent);
+  mask-image: linear-gradient(#000 0%, rgba(0,0,0,.75) 43%, transparent);
+  pointer-events: none;
+}
+html[data-mob-project] body .mob-case-masthead::after { content: none; }
+.mob-case-masthead .case-brand-return { gap: clamp(7px, 1.5vw, 12px); color: #f4eee5; }
+.case-brand-mob { font-size: clamp(16px, 2vw, 22px); font-weight: 800; letter-spacing: -.055em; }
+.case-brand-cross { font-size: 13px; font-weight: 400; opacity: .72; }
+
+[data-mob-image-state="pending"] img { visibility: hidden; }
+[data-mob-image-state="pending"]::after {
+  content: attr(data-mob-decode);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #d1cac0;
+  font: 500 13px/1.4 system-ui, sans-serif;
+  pointer-events: none;
+}
+
 </style>
-  <script defer src="story-catalog.js"></script>
-  <script defer src="story-materials.js?entry=1124-3"></script>
+  <script defer src="story-catalog.js?entry=1125-6"></script>
+  <script defer src="story-materials.js?entry=1125-6"></script>
 
 </head>
 <body class="case-sample case-editorial xt5-outreach">

@@ -75,6 +75,12 @@
     requestAnimationFrame(() => requestAnimationFrame(show));
   }
 
+  addEventListener('pagereveal', event => {
+    event.viewTransition?.ready.catch(() => {});
+    event.viewTransition?.updateCallbackDone.catch(() => {});
+    event.viewTransition?.finished.catch(() => {});
+  });
+
   addEventListener('pageswap', event => {
     const outgoing = event.viewTransition;
     if (!outgoing) return;

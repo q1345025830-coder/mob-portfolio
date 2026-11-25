@@ -568,6 +568,11 @@ reduced.addEventListener('change', () => {
   }
   redraw();
 });
+window.addEventListener('pagereveal', event => {
+  event.viewTransition?.ready.catch(() => {});
+  event.viewTransition?.updateCallbackDone.catch(() => {});
+  event.viewTransition?.finished.catch(() => {});
+});
 window.addEventListener('pageshow', event => {
   if (event.persisted) restoreEntry();
 });
