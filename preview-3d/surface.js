@@ -61,18 +61,14 @@ function visibleCells(layout, view) {
   const {width,height,stepX,stepY,columns,rows,periodY,rowEdges,slots,narrow} = layout;
   const reachX = width / stepX * .9 + 1, reachY = height / stepY * .7 + 1;
   const cells = [];
-  // Only the initial composition shades the preceding row. The periodic grid stays whole when browsing.
-  const previousRowOpacity = 1 - (view.homeFrame ?? 0);
   for (let band=Math.floor((view.y-reachY+1)/periodY);band<=Math.floor((view.y+reachY+1)/periodY);band++) {
     for (let r=0;r<rows;r++) {
-      const opacity = !narrow && band === -1 && r === rows - 1 ? previousRowOpacity : 1;
-      if (!opacity) continue;
       const top=(band*periodY+rowEdges[r])*stepY, bottom=(band*periodY+rowEdges[r+1])*stepY;
       if (bottom < (view.y-reachY)*stepY || top > (view.y+reachY)*stepY) continue;
       for (let c=Math.floor(view.x-reachX);c<=Math.ceil(view.x+reachX);c++) {
         const col=wrap(c,columns), id=slots[r*columns+col];
         const sizes=narrow ? [.94,.96,.92,.95,.93] : [.92,.95,.86,.93,.89];
-        cells.push({id,opacity,key:c+','+(band*rows+r),x:c*stepX,y:(top+bottom)/2,width:sizes[(r+col)%5]*stepX,
+        cells.push({id,key:c+','+(band*rows+r),x:c*stepX,y:(top+bottom)/2,width:sizes[(r+col)%5]*stepX,
           cell:{left:(c-.5)*stepX,right:(c+.5)*stepX,top,bottom}});
       }
     }
@@ -254,14 +250,14 @@ function screenCorner(corner, layout, view) {
   return height > 0 ? { left, width, y, height, slope } : null;
 }
 
-function positionLink(entry, outline, corners, layout, view, layer, opacity) {
+function positionLink(entry, outline, corners, layout, view, layer) {
   const xs = outline.map(point => point.x);
   const ys = outline.map(point => point.y);
   const left = Math.min(...xs), top = Math.min(...ys);
   const right = Math.max(...xs), bottom = Math.max(...ys);
   Object.assign(entry.link.style, {
     left: left + 'px', top: top + 'px', width: right - left + 'px', height: bottom - top + 'px',
-    zIndex: String(layer), opacity: opacity === 1 ? '' : opacity.toFixed(3),
+    zIndex: String(layer),
   });
   entry.labels.forEach((label, i) => {
     const box = screenCorner(corners[i], layout, view);
@@ -552,7 +548,6 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
     };
     shapes = ordered.map((entry, layer) => {
       const {tile,card,art,corners,center}=entry;
-      const { opacity } = tile;
       const cell = meshRect(tile.cell);
       const primaryCell = primary.get(card)===entry;
       const target = primaryCell ? card : instance(card,tile.key);
@@ -570,24 +565,24 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
         const flat=stage.dataset.hoverStyle==='flat';
         if (flat) gl.bindTexture(gl.TEXTURE_2D,solid);
         const tint = flat ? [.16, .31, .47] : hoverTint;
-        gl.uniform4f(tone, ...tint, level * .90 * opacity);
+        gl.uniform4f(tone, ...tint, level * .90);
         gl.bufferSubData(gl.ARRAY_BUFFER,0,mesh);
         gl.drawElements(gl.TRIANGLES,indices.length,gl.UNSIGNED_SHORT,0);
       }
-      drawLine(horizontalEdge(tile.cell.left,tile.cell.right,tile.cell.top,layout,view),layout,[.65,.64,.62,.34 * opacity]);
-      drawLine(verticalEdge(tile.cell.left,tile.cell.top,tile.cell.bottom,layout,view),layout,[.65,.64,.62,.34 * opacity]);
+      drawLine(horizontalEdge(tile.cell.left,tile.cell.right,tile.cell.top,layout,view),layout,[.65,.64,.62,.34]);
+      drawLine(verticalEdge(tile.cell.left,tile.cell.top,tile.cell.bottom,layout,view),layout,[.65,.64,.62,.34]);
       const polygon = meshRect(art);
-      positionLink(target, polygon, corners, layout, view, layer + 1, opacity);
+      positionLink(target, polygon, corners, layout, view, layer + 1);
       const brightness = .995 - (1 - center.scale) * .29 + (selected ? .045 : 0);
       gl.bindTexture(gl.TEXTURE_2D, card.texture);
       const shade = brightness;
-      gl.uniform4f(tone, shade, shade, shade, opacity);
+      gl.uniform4f(tone, shade, shade, shade, 1);
       gl.bufferSubData(gl.ARRAY_BUFFER, 0, mesh);
       gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
 
-      drawLine([...polygon, polygon[0]], layout, selected ? [.97, .54, .44, .91 * opacity] : [.66, .59, .52, .31 * opacity]);
-      return { link: card.link, outline: cell, key:tile.key, opacity };
-    }).filter(shape => shape.opacity >= .15);
+      drawLine([...polygon, polygon[0]], layout, selected ? [.97, .54, .44, .91] : [.66, .59, .52, .31]);
+      return { link: card.link, outline: cell, key:tile.key };
+    });
     for(const [key,copy] of copies) if(!used.has(key)){copy.link.remove();copies.delete(key)}
     for(const key of fades.keys()) if(!painted.has(key)) fades.delete(key);
   }

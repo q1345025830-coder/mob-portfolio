@@ -1,4 +1,4 @@
-import { clamp, createScene, layoutFor, requestCover, viewForTile } from './surface.js?v=1125-3';
+import { clamp, createScene, layoutFor, requestCover, viewForTile } from './surface.js?v=1125-4';
 
 const stage = document.querySelector('.stage');
 stage.dataset.renderer = 'starting';
@@ -15,8 +15,7 @@ const viewButtons = [...viewSwitch.querySelectorAll('[data-view]')];
 const reset = document.querySelector('.reset');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const stateKey = 'mobPreviewGrid';
-const view = { x: 0, y: 0, pull: 0, driftX: 0, driftY: 0, homeFrame: 1 };
-let framingHome = true;
+const view = { x: 0, y: 0, pull: 0, driftX: 0, driftY: 0 };
 const velocity = { x: 0, y: 0 };
 const releaseWindow = 135;
 const smoothing = (rate, seconds) => 1 - Math.exp(-rate * seconds);
@@ -96,7 +95,7 @@ function saveEntry(projectId, updateHash = false) {
   if (updateHash) url.hash = section === 'resume' ? 'resume' : '';
   history.replaceState({
     ...history.state,
-    [stateKey]: { x: view.x, y: view.y, framingHome, projectId, cell:preferredKey, gridSize: links.length, workView, scrollOffsets: { ...scrollOffsets } },
+    [stateKey]: { x: view.x, y: view.y, projectId, cell:preferredKey, gridSize: links.length, workView, scrollOffsets: { ...scrollOffsets } },
   }, '', url);
 }
 
@@ -182,14 +181,13 @@ function tick(now) {
   const allowDrift = !press && !leaving && mouse && !reduced.matches;
   const target = allowDrift ? relativePoint(mouse.x, mouse.y) : null;
   const goals = {
-    homeFrame: Number(framingHome),
     pull: reduced.matches ? 0 : press?.dragging ? 1 : press ? view.pull : 0,
     driftX: target ? -clamp((target.x / layout.width - .5) * 44, -22, 22) : press ? view.driftX : 0,
     driftY: target ? -clamp((target.y / layout.height - .5) * 32, -16, 16) : press ? view.driftY : 0,
   };
-  for (const property of ['homeFrame', 'pull', 'driftX', 'driftY']) {
+  for (const property of ['pull', 'driftX', 'driftY']) {
     const delta = goals[property] - view[property];
-    const epsilon = property === 'pull' || property === 'homeFrame' ? .002 : .075;
+    const epsilon = property === 'pull' ? .002 : .075;
     view[property] = reduced.matches || Math.abs(delta) < epsilon
       ? goals[property]
       : view[property] + delta * smoothing(12, seconds);
@@ -282,8 +280,7 @@ function restoreEntry(resetOnReload = false) {
   const position = gridLink && state.gridSize !== links.length
     ? viewForTile(layout, gridLink.dataset.project)
     : { x, y };
-  framingHome = state?.framingHome ?? (!state?.projectId && x === layout.homeX && y === layout.homeY);
-  Object.assign(view, position, { homeFrame: Number(framingHome) });
+  Object.assign(view, position);
   scroller.scrollTop = scrollOffsets[mode];
   if (resetGrid) saveEntry(null);
   if (returned) {
@@ -326,7 +323,6 @@ window.addEventListener('pointermove', event => {
     const dx = point.x - press.start.x, dy = point.y - press.start.y;
     if (!press.dragging && Math.hypot(dx, dy) > (event.pointerType === 'touch' ? 10 : 7)) {
       press.dragging = true;
-      framingHome = false;
       stage.classList.add('is-dragging');
       stage.setPointerCapture(event.pointerId);
     }
@@ -412,7 +408,6 @@ stage.addEventListener('focusin', event => {
   clearReturned();
   stopGlide();
   preferredKey = null;
-  framingHome = false;
   Object.assign(view, viewForTile(layout, link.dataset.project, view));
   redraw();
 });
@@ -425,7 +420,6 @@ stage.addEventListener('keydown', event => {
   event.preventDefault();
   clearReturned();
   stopGlide();
-  framingHome = false;
   view.x += step[0];
   view.y += step[1];
   redraw();
@@ -564,8 +558,6 @@ reset.addEventListener('click', () => {
   stopGlide();
   view.x = layout.homeX;
   view.y = layout.homeY;
-  framingHome = true;
-  view.homeFrame = 1;
   view.pull = view.driftX = view.driftY = 0;
   redraw();
 });
