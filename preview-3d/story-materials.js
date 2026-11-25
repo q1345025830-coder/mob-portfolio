@@ -54,7 +54,7 @@
   const moduleRoot = new URL(".", document.currentScript.src);
   const workUrl = new URL("index.html", moduleRoot);
   const reviewPage = location.pathname.includes('/review/');
-  const logos = {CADILLAC:['cadillac-crest.svg','cadillac'], VOLVO:['volvo-wordmark.svg#dark','volvo']};
+  const logos = {CADILLAC:['cadillac-crest-tight.svg','cadillac'], VOLVO:['volvo-wordmark.svg#dark','volvo']};
   const referrer = document.referrer && new URL(document.referrer);
   if (referrer && referrer.origin === workUrl.origin && referrer.pathname === workUrl.pathname && history.length > 1) {
     history.replaceState({ ...history.state, mobBrandFromWork: true }, '');
@@ -79,27 +79,31 @@
     link.href = workUrl.href;
     const label = brand ? 'MOB × ' + brand : 'MOB';
     link.setAttribute('aria-label', label + (root.lang === 'en' ? ' · Return to work' : ' · 返回作品'));
+    const lockup = document.createElement('span');
+    lockup.className = 'case-brand-lockup';
+    link.append(lockup);
     const wordmark = document.createElement('span');
     wordmark.className = 'case-brand-mob';
     wordmark.textContent = 'MOB';
-    link.append(wordmark);
+    lockup.append(wordmark);
     if (brand) {
       const divider = document.createElement('span');
       divider.className = 'case-brand-cross';
       divider.setAttribute('aria-hidden', 'true');
       divider.textContent = '×';
-      link.append(divider);
+      lockup.append(divider);
     }
     if (match) {
       const logo = document.createElement('img');
       logo.className = 'case-brand-logo case-brand-logo--' + match[1];
       logo.src = new URL('case-media/' + match[0], moduleRoot).href;
       logo.alt = '';
-      link.append(logo);
+      lockup.append(logo);
     } else if (brand) {
       const brandText = document.createElement('span');
+      brandText.className = 'case-brand-name';
       brandText.textContent = brand;
-      link.append(brandText);
+      lockup.append(brandText);
     }
     link.addEventListener('click', event => {
       if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;

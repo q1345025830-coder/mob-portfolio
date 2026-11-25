@@ -1,6 +1,6 @@
 {
-  "version": "2026-11-25.7",
-  "productionBaseline": "6ea40ee058205713f4dafef3ebeb61c68cbfc65e",
+  "version": "2026-11-25.8",
+  "productionBaseline": "5d516a7897cf96e876eb6e927633e1668fb6d1a2",
   "projects": 23,
   "originals": 195,
   "references": 25,
@@ -8,5 +8,5 @@
   "gridBuild": "1125-6",
   "caseHeaderBuild": "1125-6",
   "rootEntry": "direct",
-  "wordmarkBuild": "1125-7"
+  "wordmarkBuild": "1125-8"
 }

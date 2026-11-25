@@ -935,7 +935,7 @@ html:has(.viewer[open]) { overflow: hidden; }
 </style>
   <script type="module" src="xt5-detail.js"></script>
 
-  <style data-mob-css="story-materials.css?entry=1125-7">
+  <style data-mob-css="story-materials.css?entry=1125-8">
 .clip h2{font-size:clamp(22px,3vw,40px);font-weight:550;letter-spacing:-.035em;margin:0 0 1em}
 html.mob-themed,html.mob-themed body,html.mob-themed .case-paper{background:var(--mob-tone);color:#f4eee5;--bg:var(--mob-tone);--paper:var(--mob-tone);--case-tone:var(--mob-tone)}
 html.mob-themed .case-paper :is(p,h1,h2,h3,figcaption,.eyebrow){color:inherit}
@@ -1023,13 +1023,7 @@ html[data-mob-project] body{background-color:var(--mob-tone)} html[data-mob-proj
   border-radius: 6px; flex: none;
 }
 .case-brand-return:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
-.case-brand-logo { display: block; width: auto; height: 29px; max-width: 92px; object-fit: contain; filter: brightness(0) invert(.96); }
-.case-brand-logo--volvo { width: 83px; height: auto; }
-
-@media (max-width: 680px) {
-  .case-brand-logo { height: 23px; }
-  .case-brand-logo--volvo { width: 67px; height: auto; }
-}
+.case-brand-logo { display: block; width: auto; height: .72em; height: 1cap; max-width: none; filter: brightness(0) invert(.96); }
 @media (prefers-reduced-motion: no-preference) {
   .mob-media-awaiting { translate: 0 7px; opacity: .9; }
   .story .media-link, .editorial-story .case-figure, .chapter .case-figure { transition: translate 390ms ease-out, opacity 330ms ease-out; }
@@ -1125,12 +1119,24 @@ html[data-mob-project] body .mob-case-masthead::before {
   pointer-events: none;
 }
 html[data-mob-project] body .mob-case-masthead::after { content: none; }
-.mob-case-masthead .case-brand-return { gap: clamp(7px, 1.5vw, 12px); color: #f4eee5; }
-.case-brand-mob { font: 800 24px/1 system-ui, sans-serif; letter-spacing: -.07em; }
-@media (max-width: 680px) {
-  .case-brand-mob { font-size: 21px; }
+.mob-case-masthead .case-brand-return { color: #f4eee5; }
+.case-brand-lockup {
+  display: inline-flex;
+  align-items: baseline;
+  gap: clamp(7px, 1.5vw, 12px);
+  font: 800 24px/1 system-ui, sans-serif;
+  white-space: nowrap;
 }
-.case-brand-cross { font-size: 13px; font-weight: 400; opacity: .72; }
+.case-brand-mob { letter-spacing: -.07em; }
+.case-brand-name { letter-spacing: -.04em; }
+.case-brand-cross { align-self: center; font-size: 13px; font-weight: 400; opacity: .72; }
+@media (max-width: 680px) {
+  .case-brand-lockup { font-size: 21px; }
+  .case-brand-lockup:has(.case-brand-logo--volvo) {
+    font-size: clamp(12px, calc((100vw - 160px) / 12.6), 21px);
+  }
+  .mob-case-masthead:has(.case-brand-logo--volvo) nav { white-space: nowrap; }
+}
 
 [data-mob-image-state="pending"] img { visibility: hidden; }
 [data-mob-image-state="pending"]::after {
@@ -1146,7 +1152,7 @@ html[data-mob-project] body .mob-case-masthead::after { content: none; }
 
 </style>
   <script defer src="story-catalog.js?entry=1125-6"></script>
-  <script defer src="story-materials.js?entry=1125-6"></script>
+  <script defer src="story-materials.js?entry=1125-8"></script>
 
 </head>
 <body class="case-sample case-editorial">
