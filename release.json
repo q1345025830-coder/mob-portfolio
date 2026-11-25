@@ -1,8 +1,9 @@
 {
-  "version": "2026-11-24.5",
-  "productionBaseline": "aced820da112fdb3b7dcccc177a7773eb5525fae",
+  "version": "2026-11-25.1",
+  "productionBaseline": "92e7eefb06f72d53d11f58e7bc7afff24a870efa",
   "projects": 23,
   "originals": 195,
   "references": 25,
-  "motionBuild": "1124-9"
+  "motionBuild": "1124-9",
+  "gridBuild": "1125-1"
 }

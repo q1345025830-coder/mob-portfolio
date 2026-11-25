@@ -1,4 +1,4 @@
-import { clamp, createScene, layoutFor, requestCover, viewForTile } from './surface.js?v=1124-8';
+import { clamp, createScene, layoutFor, requestCover, viewForTile } from './surface.js?v=1125-1';
 
 const stage = document.querySelector('.stage');
 stage.dataset.renderer = 'starting';

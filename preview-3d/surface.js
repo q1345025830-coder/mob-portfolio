@@ -32,7 +32,6 @@ export function layoutFor(width, height, projectIds) {
   const narrow = width <= 680;
   const stepX = narrow ? Math.max(1, width * .51) : clamp(width * .248, 242, 555);
   const stepY = narrow ? Math.max(height * .365, 162) : clamp(height * .365, 217, 410);
-  const wide = narrow ? 0 : clamp((width / height - 1.36) / .6, 0, 1);
   const columns = Math.min(gridColumns, projectIds.length);
   const rows = Math.ceil(projectIds.length / columns);
   // Fill the short last row with existing projects so both edges tile continuously.
@@ -40,7 +39,7 @@ export function layoutFor(width, height, projectIds) {
     projectIds[i] ?? projectIds[(i * 7) % projectIds.length]);
   const rowEdges = Array.from({length: rows+1}, (_, i) => narrow || i <= 1 ? i - 1 : i - .75);
   const periodY = rowEdges.at(-1) - rowEdges[0];
-  return {width,height,narrow,wide,stepX,stepY,columns,rows,slots,rowEdges,periodY,
+  return {width,height,narrow,stepX,stepY,columns,rows,slots,rowEdges,periodY,
     homeX:narrow ? .5 : (columns-1)/2,homeY:narrow ? 1 : 0};
 }
 
@@ -62,14 +61,21 @@ function visibleCells(layout, view) {
   const {width,height,stepX,stepY,columns,rows,periodY,rowEdges,slots,narrow} = layout;
   const reachX = width / stepX * .9 + 1, reachY = height / stepY * .7 + 1;
   const cells = [];
+  // Preserve the original top margin on the desktop home row without a hard loop boundary.
+  const homeBand = Math.round((view.y - layout.homeY) / periodY);
+  const distanceFromHome = Math.abs(view.y - layout.homeY - homeBand * periodY);
+  const progress = clamp((distanceFromHome - .06) / .52, 0, 1);
+  const previousRowOpacity = progress * progress * (3 - 2 * progress);
   for (let band=Math.floor((view.y-reachY+1)/periodY);band<=Math.floor((view.y+reachY+1)/periodY);band++) {
     for (let r=0;r<rows;r++) {
+      const opacity = !narrow && band === homeBand - 1 && r === rows - 1 ? previousRowOpacity : 1;
+      if (!opacity) continue;
       const top=(band*periodY+rowEdges[r])*stepY, bottom=(band*periodY+rowEdges[r+1])*stepY;
       if (bottom < (view.y-reachY)*stepY || top > (view.y+reachY)*stepY) continue;
       for (let c=Math.floor(view.x-reachX);c<=Math.ceil(view.x+reachX);c++) {
         const col=wrap(c,columns), id=slots[r*columns+col];
         const sizes=narrow ? [.94,.96,.92,.95,.93] : [.92,.95,.86,.93,.89];
-        cells.push({id,key:c+','+(band*rows+r),x:c*stepX,y:(top+bottom)/2,width:sizes[(r+col)%5]*stepX,
+        cells.push({id,opacity,key:c+','+(band*rows+r),x:c*stepX,y:(top+bottom)/2,width:sizes[(r+col)%5]*stepX,
           cell:{left:(c-.5)*stepX,right:(c+.5)*stepX,top,bottom}});
       }
     }
@@ -81,7 +87,7 @@ function tileContent(tile, aspect, narrow) {
   const { cell } = tile;
   const insetX = narrow ? 7 : 15;
   const insetY = narrow ? 7 : 11;
-  const upperHeight = narrow ? 40 : 38;
+  const upperHeight = narrow ? 40 : 36;
   const lowerHeight = narrow ? 22 : 29;
   const gap = narrow ? 4 : 8;
   const bounds = {
@@ -110,7 +116,7 @@ function tileContent(tile, aspect, narrow) {
 
 
 export function project(x, y, layout, view) {
-  const { width, height, narrow, wide, stepX, stepY } = layout;
+  const { width, height, narrow, stepX, stepY } = layout;
   const zoom = 1 / (1 + view.pull * (narrow ? .045 : .145));
   const dx = (x - view.x * stepX + view.driftX) * zoom;
   const dy = (y - view.y * stepY + view.driftY) * zoom;
@@ -118,15 +124,13 @@ export function project(x, y, layout, view) {
   const u = (dx / (width * .54)) ** 2;
   const v = (dy / (height * .68)) ** 2;
   const scale = 1 / (1 + .168 * u / (1 + .63 * u) + .044 * v / (1 + .40 * v));
-  // A restrained cross-axis term wraps the sides without pulling open the corners.
-  const side = u / (.65 + u);
-  const cross = (.10 + .055 * wide) * side;
-  const horizontal = dx * scale * (1 + cross * v / (.75 + v));
+  const horizontal = dx * scale;
   const radius = (2 * horizontal / width) ** 2;
-  const edge = 1.36 * radius / (.49 + radius);
+  // Ease into the edge limit so a cover crossing it never changes slope abruptly.
+  const edge = radius / Math.sqrt(1 + (radius / 1.65) ** 2);
   const fromSeam = y - view.y * stepY;
   const bend = fromSeam / (1 + .32 * (fromSeam / stepY) ** 2);
-  const bow = bend * zoom * edge * (.198 + .026 * wide);
+  const bow = bend * zoom * edge * .213;
   // Keep the lens centered on the viewport as the repeated plane moves beneath it.
   return {
     x: width * .5 + horizontal,
@@ -253,14 +257,14 @@ function screenCorner(corner, layout, view) {
   return height > 0 ? { left, width, y, height, slope } : null;
 }
 
-function positionLink(entry, outline, corners, layout, view, layer) {
+function positionLink(entry, outline, corners, layout, view, layer, opacity) {
   const xs = outline.map(point => point.x);
   const ys = outline.map(point => point.y);
   const left = Math.min(...xs), top = Math.min(...ys);
   const right = Math.max(...xs), bottom = Math.max(...ys);
   Object.assign(entry.link.style, {
     left: left + 'px', top: top + 'px', width: right - left + 'px', height: bottom - top + 'px',
-    zIndex: String(layer),
+    zIndex: String(layer), opacity: opacity === 1 ? '' : opacity.toFixed(3),
   });
   entry.labels.forEach((label, i) => {
     const box = screenCorner(corners[i], layout, view);
@@ -551,6 +555,7 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
     };
     shapes = ordered.map((entry, layer) => {
       const {tile,card,art,corners,center}=entry;
+      const { opacity } = tile;
       const cell = meshRect(tile.cell);
       const primaryCell = primary.get(card)===entry;
       const target = primaryCell ? card : instance(card,tile.key);
@@ -568,24 +573,24 @@ export function createScene(stage, links, { onRedraw, onFallback }) {
         const flat=stage.dataset.hoverStyle==='flat';
         if (flat) gl.bindTexture(gl.TEXTURE_2D,solid);
         const tint = flat ? [.16, .31, .47] : hoverTint;
-        gl.uniform4f(tone, ...tint, level * .90);
+        gl.uniform4f(tone, ...tint, level * .90 * opacity);
         gl.bufferSubData(gl.ARRAY_BUFFER,0,mesh);
         gl.drawElements(gl.TRIANGLES,indices.length,gl.UNSIGNED_SHORT,0);
       }
-      drawLine(horizontalEdge(tile.cell.left,tile.cell.right,tile.cell.top,layout,view),layout,[.65,.64,.62,.34]);
-      drawLine(verticalEdge(tile.cell.left,tile.cell.top,tile.cell.bottom,layout,view),layout,[.65,.64,.62,.34]);
+      drawLine(horizontalEdge(tile.cell.left,tile.cell.right,tile.cell.top,layout,view),layout,[.65,.64,.62,.34 * opacity]);
+      drawLine(verticalEdge(tile.cell.left,tile.cell.top,tile.cell.bottom,layout,view),layout,[.65,.64,.62,.34 * opacity]);
       const polygon = meshRect(art);
-      positionLink(target, polygon, corners, layout, view, layer + 1);
+      positionLink(target, polygon, corners, layout, view, layer + 1, opacity);
       const brightness = .995 - (1 - center.scale) * .29 + (selected ? .045 : 0);
       gl.bindTexture(gl.TEXTURE_2D, card.texture);
       const shade = brightness;
-      gl.uniform4f(tone, shade, shade, shade, 1);
+      gl.uniform4f(tone, shade, shade, shade, opacity);
       gl.bufferSubData(gl.ARRAY_BUFFER, 0, mesh);
       gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
 
-      drawLine([...polygon, polygon[0]], layout, selected ? [.97, .54, .44, .91] : [.66, .59, .52, .31]);
-      return { link: card.link, outline: cell, key:tile.key };
-    });
+      drawLine([...polygon, polygon[0]], layout, selected ? [.97, .54, .44, .91 * opacity] : [.66, .59, .52, .31 * opacity]);
+      return { link: card.link, outline: cell, key:tile.key, opacity };
+    }).filter(shape => shape.opacity >= .15);
     for(const [key,copy] of copies) if(!used.has(key)){copy.link.remove();copies.delete(key)}
     for(const key of fades.keys()) if(!painted.has(key)) fades.delete(key);
   }
