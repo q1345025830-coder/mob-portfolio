@@ -1,11 +1,12 @@
 {
-  "version": "2026-11-25.6",
-  "productionBaseline": "5eef5d8a6b233c64c512b5fb74c9870e07ad02e3",
+  "version": "2026-11-25.7",
+  "productionBaseline": "6ea40ee058205713f4dafef3ebeb61c68cbfc65e",
   "projects": 23,
   "originals": 195,
   "references": 25,
   "motionBuild": "1125-3",
   "gridBuild": "1125-6",
   "caseHeaderBuild": "1125-6",
-  "rootEntry": "direct"
+  "rootEntry": "direct",
+  "wordmarkBuild": "1125-7"
 }

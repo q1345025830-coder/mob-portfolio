@@ -188,7 +188,10 @@ html[data-mob-project] body .mob-case-masthead::before {
 }
 html[data-mob-project] body .mob-case-masthead::after { content: none; }
 .mob-case-masthead .case-brand-return { gap: clamp(7px, 1.5vw, 12px); color: #f4eee5; }
-.case-brand-mob { font-size: clamp(16px, 2vw, 22px); font-weight: 800; letter-spacing: -.055em; }
+.case-brand-mob { font: 800 24px/1 system-ui, sans-serif; letter-spacing: -.07em; }
+@media (max-width: 680px) {
+  .case-brand-mob { font-size: 21px; }
+}
 .case-brand-cross { font-size: 13px; font-weight: 400; opacity: .72; }
 
 [data-mob-image-state="pending"] img { visibility: hidden; }
