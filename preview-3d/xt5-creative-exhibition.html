@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <script data-mob-js="case-arrival.js?entry=1125-2">
+  <script data-mob-js="case-arrival.js?entry=1125-3">
 (() => {
   const root = document.documentElement;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -19,13 +19,27 @@
   } catch { /* The canonical page also works without stored handoff state. */ }
 
   let opened = false;
-  let optOut;
   if (intent) {
-    root.dataset.mobArrival = 'holding';
-    optOut = document.createElement('style');
-    optOut.textContent = '@view-transition { navigation: none; }';
-    document.head.append(optOut);
+    root.dataset.mobArrival = intent.native ? 'native' : 'holding';
+    const navigation = document.createElement('style');
+    navigation.textContent = intent.native ? '@view-transition { navigation: auto; }'
+      : '@view-transition { navigation: none; }';
+    document.head.append(navigation);
     if (intent.color && CSS.supports('color', intent.color)) root.style.setProperty('--mob-handoff', intent.color);
+    if (intent.native) {
+      addEventListener('pagereveal', event => {
+        const transition = event.viewTransition;
+        if (!transition) {
+          root.dataset.mobArrival = opened ? 'shown' : 'holding';
+          return;
+        }
+        transition.finished.then(() => {
+          root.dataset.mobArrival = 'settled';
+        }, () => {
+          root.dataset.mobArrival = 'settled';
+        });
+      }, { once: true });
+    }
   }
 
   function upgradeHero() {
@@ -54,9 +68,7 @@
   }
 
   function show() {
-    if (intent) {
-      root.dataset.mobArrival = 'shown';
-    }
+    if (root.dataset.mobArrival === 'holding') root.dataset.mobArrival = 'shown';
     upgradeHero();
   }
 
@@ -96,6 +108,7 @@
 })();
 
 </script>
+  <link rel="expect" blocking="render" href="#case-entry-ready">
   <link rel="preload" as="image" fetchpriority="high" data-first-preview href="fast/hero/xt5-creative-exhibition.webp">
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#291c17">
@@ -1224,7 +1237,7 @@ html[data-mob-project]:not([data-mob-project=""]) .topbar { background: linear-g
           <div><dt class="visually-hidden">年份</dt><dd class="mono">2025</dd></div>
         </dl>
 
-        <p class="case-entry-intro" data-case-entry-intro>岩壁围出谷底展车，外侧楼梯通向屋顶。两层展台把 XT5 的全路况主题排成一条参观路线。</p>
+        <p id="case-entry-ready" class="case-entry-intro" data-case-entry-intro>岩壁围出谷底展车，外侧楼梯通向屋顶。两层展台把 XT5 的全路况主题排成一条参观路线。</p>
         <figure class="case-figure hero-figure" data-arrive="image">
           <a class="media-link" href="../assets/images/xt5-outreach/cover-2560.jpg" data-view-image="0" aria-label="查看大图：外展空间 · 入口夜景">
             <picture><img src="fast/hero/xt5-creative-exhibition.webp" data-entry-srcset="../assets/images/xt5-outreach/cover-768.jpg 768w, ../assets/images/xt5-outreach/cover-1600.jpg 1600w" data-entry-sizes="(max-width: 680px) calc(100vw - 32px), 96vw" width="2560" height="1429" alt="夜色中，外侧楼梯沿岩壁升到屋顶，入口映出展厅的暖光。" fetchpriority="high" decoding="async" data-entry-src="../assets/images/xt5-outreach/cover-1600.jpg"></picture>

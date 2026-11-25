@@ -13,13 +13,27 @@
   } catch { /* The canonical page also works without stored handoff state. */ }
 
   let opened = false;
-  let optOut;
   if (intent) {
-    root.dataset.mobArrival = 'holding';
-    optOut = document.createElement('style');
-    optOut.textContent = '@view-transition { navigation: none; }';
-    document.head.append(optOut);
+    root.dataset.mobArrival = intent.native ? 'native' : 'holding';
+    const navigation = document.createElement('style');
+    navigation.textContent = intent.native ? '@view-transition { navigation: auto; }'
+      : '@view-transition { navigation: none; }';
+    document.head.append(navigation);
     if (intent.color && CSS.supports('color', intent.color)) root.style.setProperty('--mob-handoff', intent.color);
+    if (intent.native) {
+      addEventListener('pagereveal', event => {
+        const transition = event.viewTransition;
+        if (!transition) {
+          root.dataset.mobArrival = opened ? 'shown' : 'holding';
+          return;
+        }
+        transition.finished.then(() => {
+          root.dataset.mobArrival = 'settled';
+        }, () => {
+          root.dataset.mobArrival = 'settled';
+        });
+      }, { once: true });
+    }
   }
 
   function upgradeHero() {
@@ -48,9 +62,7 @@
   }
 
   function show() {
-    if (intent) {
-      root.dataset.mobArrival = 'shown';
-    }
+    if (root.dataset.mobArrival === 'holding') root.dataset.mobArrival = 'shown';
     upgradeHero();
   }
 

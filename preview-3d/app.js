@@ -1,4 +1,4 @@
-import { clamp, createScene, layoutFor, requestCover, viewForTile } from './surface.js?v=1125-2';
+import { clamp, createScene, layoutFor, requestCover, viewForTile } from './surface.js?v=1125-3';
 
 const stage = document.querySelector('.stage');
 stage.dataset.renderer = 'starting';
@@ -256,6 +256,7 @@ function restoreEntry(resetOnReload = false) {
   delete document.body.dataset.caseTheme;
   exitCurtain?.remove();
   exitCurtain = null;
+  document.querySelector('[data-case-navigation]')?.remove();
   stage.classList.remove('is-leaving', 'is-case-leaving', 'is-dragging');
   clearReturned();
   stopGlide();
@@ -507,8 +508,16 @@ function exitToProject(link) {
   }
   if (caseTheme) document.body.dataset.caseTheme = caseTheme;
   if (gridVisible()) stage.classList.add('is-case-leaving');
+  const native = Boolean(link.dataset.casePreview && 'onpagereveal' in window);
+  if (native) {
+    const optIn = document.createElement('style');
+    optIn.dataset.caseNavigation = '';
+    optIn.textContent = '@view-transition { navigation: auto; }';
+    document.head.append(optIn);
+  }
   const curtain = document.createElement('div');
   curtain.className = 'mob-entry-curtain is-rising';
+  curtain.classList.toggle('is-tinted', native);
   curtain.setAttribute('aria-hidden', 'true');
   document.body.append(curtain);
   exitCurtain = curtain;
@@ -523,6 +532,7 @@ function exitToProject(link) {
           destination: url.pathname + url.search + url.hash,
           color: getComputedStyle(curtain).backgroundColor,
           sentAt: Date.now(),
+          native,
         }));
       } catch { /* Standard navigation still works with storage disabled. */ }
     }

@@ -649,6 +649,7 @@ body:not(.is-spatial) #work-grid { padding-bottom: 18px; }
 }
 .mob-entry-curtain.is-rising { animation: mob-entry-rise 135ms cubic-bezier(.25,.58,.25,1) both; }
 @keyframes mob-entry-rise { to { transform: translateY(0); } }
+.mob-entry-curtain.is-tinted { opacity: .78; }
 .is-case-leaving :is(.scene,.projects) {
   transform: scale(.989);
   transition: transform 250ms ease;

@@ -1,6 +1,6 @@
 <!doctype html>
 <html data-entry-intro data-mob-project="ct6-creative-exhibition" lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <script data-mob-js="preview-3d/case-arrival.js?entry=1125-2">
+  <script data-mob-js="preview-3d/case-arrival.js?entry=1125-3">
 (() => {
   const root = document.documentElement;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -16,13 +16,27 @@
   } catch { /* The canonical page also works without stored handoff state. */ }
 
   let opened = false;
-  let optOut;
   if (intent) {
-    root.dataset.mobArrival = 'holding';
-    optOut = document.createElement('style');
-    optOut.textContent = '@view-transition { navigation: none; }';
-    document.head.append(optOut);
+    root.dataset.mobArrival = intent.native ? 'native' : 'holding';
+    const navigation = document.createElement('style');
+    navigation.textContent = intent.native ? '@view-transition { navigation: auto; }'
+      : '@view-transition { navigation: none; }';
+    document.head.append(navigation);
     if (intent.color && CSS.supports('color', intent.color)) root.style.setProperty('--mob-handoff', intent.color);
+    if (intent.native) {
+      addEventListener('pagereveal', event => {
+        const transition = event.viewTransition;
+        if (!transition) {
+          root.dataset.mobArrival = opened ? 'shown' : 'holding';
+          return;
+        }
+        transition.finished.then(() => {
+          root.dataset.mobArrival = 'settled';
+        }, () => {
+          root.dataset.mobArrival = 'settled';
+        });
+      }, { once: true });
+    }
   }
 
   function upgradeHero() {
@@ -51,9 +65,7 @@
   }
 
   function show() {
-    if (intent) {
-      root.dataset.mobArrival = 'shown';
-    }
+    if (root.dataset.mobArrival === 'holding') root.dataset.mobArrival = 'shown';
     upgradeHero();
   }
 
@@ -93,6 +105,7 @@
 })();
 
 </script>
+  <link rel="expect" blocking="render" href="#case-entry-ready">
   <link rel="preload" as="image" fetchpriority="high" data-first-preview href="preview-3d/fast/hero/ct6-creative-exhibition.webp"><meta name="theme-color" content="#101010"><script defer src="assets/js/navigation.js"></script><title>CT6 创意外展 — 3D Portfolio</title><style data-mob-css="assets/css/style.css">
 @charset "UTF-8";
 :root{color-scheme:dark;--bg:#101010;--surface:#141414;--ink:#e6e2d9;--muted:#96938d;--line:#32312e;--accent:#b53a32;--gutter:clamp(24px,5.2vw,88px);--max:1600px;--font:"Segoe UI",Arial,"Microsoft YaHei",sans-serif}
@@ -690,7 +703,7 @@ html[data-mob-project]:not([data-mob-project=""]) .topbar { background: linear-g
       <div class="detail-title"><h1><span>CT6</span><span class="project-cn">创意外展</span></h1><div class="discipline">CADILLAC / 2025<br>AUTOMOTIVE<br>EXHIBITION SPACE<br>3D VISUALIZATION</div></div>
       <div class="case-headline"><span>CREATIVE EXHIBITION</span><span>创意外展 · 三维视觉</span></div>
 
-        <p class="case-entry-intro" data-case-entry-intro>磁流变液让 CT6 的悬挂技术在展台上有了一个可以近看的切入点。</p>
+        <p id="case-entry-ready" class="case-entry-intro" data-case-entry-intro>磁流变液让 CT6 的悬挂技术在展台上有了一个可以近看的切入点。</p>
     </header>
     <div class="gallery case-story case-story--editorial" aria-label="精选项目画面">
       <section class="opening-view"><figure class="figure case-figure hero-figure" data-image="0">
