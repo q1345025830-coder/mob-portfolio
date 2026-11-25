@@ -646,9 +646,9 @@ body:not(.is-spatial) #work-grid { padding-bottom: 18px; }
   pointer-events: none;
   background-color: var(--case-tone, #252423);
   transform: translateY(100%);
-  transition: transform 165ms cubic-bezier(.25,.58,.25,1);
 }
-.mob-entry-curtain.is-rising { transform: translateY(76%); }
+.mob-entry-curtain.is-rising { animation: mob-entry-rise 135ms cubic-bezier(.25,.58,.25,1) both; }
+@keyframes mob-entry-rise { to { transform: translateY(0); } }
 .is-case-leaving :is(.scene,.projects) {
   transform: scale(.989);
   transition: transform 250ms ease;

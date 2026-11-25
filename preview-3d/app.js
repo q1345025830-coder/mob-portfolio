@@ -1,4 +1,4 @@
-import { clamp, createScene, layoutFor, requestCover, viewForTile } from './surface.js?v=1125-1';
+import { clamp, createScene, layoutFor, requestCover, viewForTile } from './surface.js?v=1125-2';
 
 const stage = document.querySelector('.stage');
 stage.dataset.renderer = 'starting';
@@ -15,7 +15,8 @@ const viewButtons = [...viewSwitch.querySelectorAll('[data-view]')];
 const reset = document.querySelector('.reset');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const stateKey = 'mobPreviewGrid';
-const view = { x: 0, y: 0, pull: 0, driftX: 0, driftY: 0 };
+const view = { x: 0, y: 0, pull: 0, driftX: 0, driftY: 0, homeFrame: 1 };
+let framingHome = true;
 const velocity = { x: 0, y: 0 };
 const releaseWindow = 135;
 const smoothing = (rate, seconds) => 1 - Math.exp(-rate * seconds);
@@ -64,6 +65,7 @@ for (const link of links) {
   row.href = link.href;
   row.dataset.project = id;
   if (link.dataset.caseTheme) row.dataset.caseTheme = link.dataset.caseTheme;
+  if (link.dataset.casePreview) row.dataset.casePreview = link.dataset.casePreview;
   row.append(label('row-name', title), label('row-brand', brand), label('row-kind', kind), label('row-year', year), projectArrow());
   const item = document.createElement('li');
   item.append(row);
@@ -94,7 +96,7 @@ function saveEntry(projectId, updateHash = false) {
   if (updateHash) url.hash = section === 'resume' ? 'resume' : '';
   history.replaceState({
     ...history.state,
-    [stateKey]: { x: view.x, y: view.y, projectId, cell:preferredKey, gridSize: links.length, workView, scrollOffsets: { ...scrollOffsets } },
+    [stateKey]: { x: view.x, y: view.y, framingHome, projectId, cell:preferredKey, gridSize: links.length, workView, scrollOffsets: { ...scrollOffsets } },
   }, '', url);
 }
 
@@ -180,13 +182,14 @@ function tick(now) {
   const allowDrift = !press && !leaving && mouse && !reduced.matches;
   const target = allowDrift ? relativePoint(mouse.x, mouse.y) : null;
   const goals = {
+    homeFrame: Number(framingHome),
     pull: reduced.matches ? 0 : press?.dragging ? 1 : press ? view.pull : 0,
     driftX: target ? -clamp((target.x / layout.width - .5) * 44, -22, 22) : press ? view.driftX : 0,
     driftY: target ? -clamp((target.y / layout.height - .5) * 32, -16, 16) : press ? view.driftY : 0,
   };
-  for (const property of ['pull', 'driftX', 'driftY']) {
+  for (const property of ['homeFrame', 'pull', 'driftX', 'driftY']) {
     const delta = goals[property] - view[property];
-    const epsilon = property === 'pull' ? .002 : .075;
+    const epsilon = property === 'pull' || property === 'homeFrame' ? .002 : .075;
     view[property] = reduced.matches || Math.abs(delta) < epsilon
       ? goals[property]
       : view[property] + delta * smoothing(12, seconds);
@@ -278,7 +281,8 @@ function restoreEntry(resetOnReload = false) {
   const position = gridLink && state.gridSize !== links.length
     ? viewForTile(layout, gridLink.dataset.project)
     : { x, y };
-  Object.assign(view, position);
+  framingHome = state?.framingHome ?? (!state?.projectId && x === layout.homeX && y === layout.homeY);
+  Object.assign(view, position, { homeFrame: Number(framingHome) });
   scroller.scrollTop = scrollOffsets[mode];
   if (resetGrid) saveEntry(null);
   if (returned) {
@@ -302,6 +306,10 @@ stage.addEventListener('pointerdown', event => {
   suppressClick = Math.hypot(velocity.x, velocity.y) > .12;
   clearReturned();
   stopGlide();
+  if (event.pointerType === 'touch' && !suppressClick) {
+    const target = linkAt(event.clientX, event.clientY);
+    if (target?.dataset.casePreview && !reduced.matches) prepareCase(target);
+  }
   const start = sample(event);
   press = { id: event.pointerId, start, x: view.x, y: view.y, samples: [start], dragging: false };
   redraw();
@@ -317,6 +325,7 @@ window.addEventListener('pointermove', event => {
     const dx = point.x - press.start.x, dy = point.y - press.start.y;
     if (!press.dragging && Math.hypot(dx, dy) > (event.pointerType === 'touch' ? 10 : 7)) {
       press.dragging = true;
+      framingHome = false;
       stage.classList.add('is-dragging');
       stage.setPointerCapture(event.pointerId);
     }
@@ -402,6 +411,7 @@ stage.addEventListener('focusin', event => {
   clearReturned();
   stopGlide();
   preferredKey = null;
+  framingHome = false;
   Object.assign(view, viewForTile(layout, link.dataset.project, view));
   redraw();
 });
@@ -414,6 +424,7 @@ stage.addEventListener('keydown', event => {
   event.preventDefault();
   clearReturned();
   stopGlide();
+  framingHome = false;
   view.x += step[0];
   view.y += step[1];
   redraw();
@@ -448,48 +459,46 @@ stage.addEventListener('click', event => {
 function prepareCase(link) {
   const target = new URL(link.href);
   target.hash = '';
-  const href = target.href;
-  if (preparedCase?.href === href) return preparedCase.ready;
+  if (target.origin !== location.origin || preparedCase?.href === target.href) return;
 
-  preparedCase?.controller.abort();
   for (const node of preparedCase?.assets || []) node.remove();
-  const controller = new AbortController();
-  const preparation = { href, controller, assets: [] };
-  preparedCase = preparation;
-  preparation.ready = fetch(href, {
-    signal: controller.signal,
-    headers: { Accept: 'text/html' },
-  }).then(async response => {
-    if (!response.ok || preparation !== preparedCase) return;
-    const parsed = document.createElement('template');
-    parsed.innerHTML = await response.text();
-    if (preparation !== preparedCase) return;
-    const cacheable = parsed.content.querySelectorAll('link[rel="stylesheet"], link[data-first-preview], script[src*="case-arrival.js"]');
-    for (const asset of cacheable) {
-      const url = new URL(asset.getAttribute('href') || asset.getAttribute('src'), href);
-      if (url.origin !== location.origin) continue;
-      const hint = document.createElement('link');
-      hint.rel = 'preload';
-      hint.as = asset.hasAttribute('data-first-preview') ? 'image' : asset.tagName === 'SCRIPT' ? 'script' : 'style';
-      hint.href = url.href;
-      hint.fetchPriority = hint.as === 'style' ? 'auto' : 'low';
-      preparation.assets.push(hint);
-      document.head.append(hint);
-    }
-  }).catch(() => {});
-  return preparation.ready;
+  const assets = [];
+  // Prefetch the navigation itself so the browser can reuse it when following the link.
+  if (HTMLScriptElement.supports?.('speculationrules')) {
+    const hint = document.createElement('script');
+    hint.type = 'speculationrules';
+    hint.textContent = JSON.stringify({ prefetch: [{ urls: [target.href], eagerness: 'immediate' }] });
+    assets.push(hint);
+  } else {
+    const hint = document.createElement('link');
+    hint.rel = 'prefetch';
+    hint.href = target.href;
+    assets.push(hint);
+  }
+  if (link.dataset.casePreview) {
+    const hint = document.createElement('link');
+    hint.rel = 'preload';
+    hint.as = 'image';
+    hint.href = new URL(link.dataset.casePreview, location.href).href;
+    hint.fetchPriority = 'low';
+    assets.push(hint);
+  }
+  preparedCase = { href: target.href, assets };
+  document.head.append(...assets);
 }
 
 function scheduleCase(link) {
   clearTimeout(previewTimer);
   if (!link?.dataset.caseTheme || leaving || restoring || reduced.matches) return;
-  previewTimer = setTimeout(() => prepareCase(link), 170);
+  previewTimer = setTimeout(() => prepareCase(link), 95);
 }
 
 function exitToProject(link) {
   leaving = link;
   clearTimeout(previewTimer);
   stopGlide();
+  cancelAnimationFrame(frame);
+  frame = lastFrame = 0;
   const { caseTheme } = link.dataset;
   const url = new URL(link.href);
   if ((!caseTheme && !link.hasAttribute('data-case-transition')) || reduced.matches) {
@@ -499,7 +508,7 @@ function exitToProject(link) {
   if (caseTheme) document.body.dataset.caseTheme = caseTheme;
   if (gridVisible()) stage.classList.add('is-case-leaving');
   const curtain = document.createElement('div');
-  curtain.className = 'mob-entry-curtain';
+  curtain.className = 'mob-entry-curtain is-rising';
   curtain.setAttribute('aria-hidden', 'true');
   document.body.append(curtain);
   exitCurtain = curtain;
@@ -508,7 +517,7 @@ function exitToProject(link) {
   function navigate() {
     if (sent || leaving !== link) return;
     sent = true;
-      if (!reduced.matches) {
+    if (!reduced.matches) {
       try {
         sessionStorage.setItem('mobCaseArrival', JSON.stringify({
           destination: url.pathname + url.search + url.hash,
@@ -520,13 +529,12 @@ function exitToProject(link) {
     location.assign(url.href);
   }
 
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    if (leaving === link) curtain.classList.add('is-rising');
-  }));
-  Promise.all([
-    new Promise(resolve => setTimeout(resolve, 118)),
-    Promise.race([prepareCase(link), new Promise(resolve => setTimeout(resolve, 970))]),
-  ]).then(navigate);
+  prepareCase(link);
+  const navigationTimer = setTimeout(navigate, 185);
+  curtain.addEventListener('animationend', () => {
+    clearTimeout(navigationTimer);
+    navigate();
+  }, { once: true });
 }
 
 stage.addEventListener('pointerover', event => {
@@ -546,6 +554,8 @@ reset.addEventListener('click', () => {
   stopGlide();
   view.x = layout.homeX;
   view.y = layout.homeY;
+  framingHome = true;
+  view.homeFrame = 1;
   view.pull = view.driftX = view.driftY = 0;
   redraw();
 });

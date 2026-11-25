@@ -49,7 +49,6 @@
 
   function show() {
     if (intent) {
-      document.head.append(optOut);
       root.dataset.mobArrival = 'shown';
     }
     upgradeHero();
@@ -58,7 +57,7 @@
   function reveal() {
     if (opened || !document.body) return;
     if (intent && !document.querySelector('main h1')) return;
-    if (root.hasAttribute('data-entry-intro') && (!document.querySelector('[data-case-entry-intro]') || !document.querySelector('img[data-entry-srcset]'))) return;
+    if (root.hasAttribute('data-entry-intro') && !document.querySelector('[data-case-entry-intro]')) return;
     opened = true;
     observer.disconnect();
     requestAnimationFrame(() => requestAnimationFrame(show));

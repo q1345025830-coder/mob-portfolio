@@ -61,14 +61,11 @@ function visibleCells(layout, view) {
   const {width,height,stepX,stepY,columns,rows,periodY,rowEdges,slots,narrow} = layout;
   const reachX = width / stepX * .9 + 1, reachY = height / stepY * .7 + 1;
   const cells = [];
-  // Preserve the original top margin on the desktop home row without a hard loop boundary.
-  const homeBand = Math.round((view.y - layout.homeY) / periodY);
-  const distanceFromHome = Math.abs(view.y - layout.homeY - homeBand * periodY);
-  const progress = clamp((distanceFromHome - .06) / .52, 0, 1);
-  const previousRowOpacity = progress * progress * (3 - 2 * progress);
+  // Only the initial composition shades the preceding row. The periodic grid stays whole when browsing.
+  const previousRowOpacity = 1 - (view.homeFrame ?? 0);
   for (let band=Math.floor((view.y-reachY+1)/periodY);band<=Math.floor((view.y+reachY+1)/periodY);band++) {
     for (let r=0;r<rows;r++) {
-      const opacity = !narrow && band === homeBand - 1 && r === rows - 1 ? previousRowOpacity : 1;
+      const opacity = !narrow && band === -1 && r === rows - 1 ? previousRowOpacity : 1;
       if (!opacity) continue;
       const top=(band*periodY+rowEdges[r])*stepY, bottom=(band*periodY+rowEdges[r+1])*stepY;
       if (bottom < (view.y-reachY)*stepY || top > (view.y+reachY)*stepY) continue;

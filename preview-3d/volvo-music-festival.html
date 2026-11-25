@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <script data-mob-js="case-arrival.js?entry=1124-9">
+  <script data-mob-js="case-arrival.js?entry=1125-2">
 (() => {
   const root = document.documentElement;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -55,7 +55,6 @@
 
   function show() {
     if (intent) {
-      document.head.append(optOut);
       root.dataset.mobArrival = 'shown';
     }
     upgradeHero();
@@ -64,7 +63,7 @@
   function reveal() {
     if (opened || !document.body) return;
     if (intent && !document.querySelector('main h1')) return;
-    if (root.hasAttribute('data-entry-intro') && (!document.querySelector('[data-case-entry-intro]') || !document.querySelector('img[data-entry-srcset]'))) return;
+    if (root.hasAttribute('data-entry-intro') && !document.querySelector('[data-case-entry-intro]')) return;
     opened = true;
     observer.disconnect();
     requestAnimationFrame(() => requestAnimationFrame(show));
